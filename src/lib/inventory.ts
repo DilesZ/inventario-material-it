@@ -449,22 +449,22 @@ export async function removeUnits(input: OutgoingMovementInput) {
   };
 }
 
-export async function clearDevelopmentUnits() {
+export async function clearAllUnits() {
   await ensureDbReady();
 
   await db.execute("DELETE FROM units");
 
   return {
-    message: "Se han eliminado todas las unidades del entorno de desarrollo.",
+    message: "Se han eliminado todas las unidades del inventario operativo.",
   };
 }
 
-export async function clearDevelopmentMovements() {
+export async function clearAllMovements() {
   await ensureDbReady();
 
   await db.execute("DELETE FROM movements");
 
   return {
-    message: "Se han eliminado todos los movimientos del entorno de desarrollo.",
+    message: "Se han eliminado todos los movimientos del inventario operativo.",
   };
 }

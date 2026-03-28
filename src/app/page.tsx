@@ -140,14 +140,13 @@ export default function Home() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [runningDevelopmentAction, setRunningDevelopmentAction] = useState<"units" | "movements" | null>(null);
+  const [runningAdminAction, setRunningAdminAction] = useState<"units" | "movements" | null>(null);
   const [mode, setMode] = useState<"in" | "out" | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [movementSearch, setMovementSearch] = useState("");
   const [movementFilter, setMovementFilter] = useState<"all" | "in" | "out">("all");
   const [inForm, setInForm] = useState({ quantity: "1", provider: "", movementDate: today(), serialsText: "" });
   const [outForm, setOutForm] = useState({ quantity: "1", recipient: "", movementDate: today(), serialsText: "" });
-  const isDevelopmentEnvironment = databaseMode === "local";
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.slug === activeSlug) ?? null,
@@ -438,45 +437,39 @@ export default function Home() {
     }
   };
 
-  const handleDevelopmentAction = async (target: "units" | "movements") => {
-    if (!isDevelopmentEnvironment) {
-      return;
-    }
-
+  const handleAdminAction = async (target: "units" | "movements") => {
     const shouldReset = window.confirm(
-      target === "units"
-        ? "Esto eliminará todas las unidades del entorno de desarrollo. ¿Quieres continuar?"
-        : "Esto eliminará todos los movimientos del entorno de desarrollo. ¿Quieres continuar?"
+      target === "units" ? "Esto eliminará todas las unidades de forma definitiva. ¿Quieres continuar?" : "Esto eliminará todos los movimientos de forma definitiva. ¿Quieres continuar?"
     );
 
     if (!shouldReset) {
       return;
     }
 
-    setRunningDevelopmentAction(target);
+    setRunningAdminAction(target);
     setMessage("");
     setError("");
 
     try {
-      const response = await fetch("/api/dev/reset", {
+      const response = await fetch("/api/admin/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target }),
       });
       const payload = (await response.json()) as ApiResponse;
       if (!response.ok) {
-        throw new Error(payload.error || "No se pudo ejecutar la acción de desarrollo.");
+        throw new Error(payload.error || "No se pudo ejecutar la acción administrativa.");
       }
 
       setMode(null);
       setInForm({ quantity: "1", provider: "", movementDate: today(), serialsText: "" });
       setOutForm({ quantity: "1", recipient: "", movementDate: today(), serialsText: "" });
-      setMessage(payload.message || "Acción de desarrollo completada.");
+      setMessage(payload.message || "Acción administrativa completada.");
       await refreshInventoryView();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "No se pudo ejecutar la acción de desarrollo.");
+      setError(actionError instanceof Error ? actionError.message : "No se pudo ejecutar la acción administrativa.");
     } finally {
-      setRunningDevelopmentAction(null);
+      setRunningAdminAction(null);
     }
   };
 
@@ -572,11 +565,11 @@ export default function Home() {
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
                     <Sparkles className="h-3.5 w-3.5" />
-                    Herramientas de desarrollo
+                    Herramientas operativas
                   </div>
-                  <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Inventario IT con control operativo</h1>
+                  <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Inventario IT con control total</h1>
                   <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-200">
-                    Gestiona productos, Nº de Serie y movimientos desde una cabecera más compacta con acciones rápidas para desarrollo.
+                    Gestiona productos, Nº de Serie y movimientos con control administrativo total sobre el inventario.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.18em]">
                     <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">DB {databaseMode === "remote" ? "remota" : "local"}</span>
@@ -590,34 +583,30 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => void refreshInventoryView()}
-                  disabled={loadingProducts || loadingMovements || loadingDetail || runningDevelopmentAction !== null}
+                  disabled={loadingProducts || loadingMovements || loadingDetail || runningAdminAction !== null}
                   className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-50"
                 >
                   <RefreshCw className="h-4 w-4" />
                   Refrescar
                 </button>
-                {isDevelopmentEnvironment ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => void handleDevelopmentAction("units")}
-                      disabled={runningDevelopmentAction !== null || submitting}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20 disabled:opacity-50"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      {runningDevelopmentAction === "units" ? "Borrando unidades..." : "Borrar unidades"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleDevelopmentAction("movements")}
-                      disabled={runningDevelopmentAction !== null || submitting}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20 disabled:opacity-50"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      {runningDevelopmentAction === "movements" ? "Borrando movimientos..." : "Borrar movimientos"}
-                    </button>
-                  </>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => void handleAdminAction("units")}
+                  disabled={runningAdminAction !== null || submitting}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20 disabled:opacity-50"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  {runningAdminAction === "units" ? "Borrando unidades..." : "Borrar unidades"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleAdminAction("movements")}
+                  disabled={runningAdminAction !== null || submitting}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20 disabled:opacity-50"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  {runningAdminAction === "movements" ? "Borrando movimientos..." : "Borrar movimientos"}
+                </button>
                 <button type="button" onClick={logout} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100">
                   Cerrar sesión
                 </button>
