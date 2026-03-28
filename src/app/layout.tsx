@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gestion de material IT",
-  description: "Control de stock y movimientos por producto y numero de serie.",
+  title: "Gestión de material IT",
+  description: "Control de stock y movimientos por producto y número de serie.",
   icons: {
     icon: "/logo.svg",
   },

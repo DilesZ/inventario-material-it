@@ -182,16 +182,16 @@ export default function Home() {
       });
       const payload = (await response.json()) as ApiResponse;
       if (!response.ok) {
-        throw new Error(payload.error || "No se pudo iniciar sesion.");
+        throw new Error(payload.error || "No se pudo iniciar sesión.");
       }
 
       setLoginUser("");
       setLoginPassword("");
       setIsAuthenticated(true);
-      setMessage("Sesion iniciada correctamente.");
+      setMessage("Sesión iniciada correctamente.");
       await loadProducts(activeSlug);
     } catch (loginRequestError) {
-      setLoginError(loginRequestError instanceof Error ? loginRequestError.message : "No se pudo iniciar sesion.");
+      setLoginError(loginRequestError instanceof Error ? loginRequestError.message : "No se pudo iniciar sesión.");
     } finally {
       setSubmitting(false);
     }
@@ -280,9 +280,9 @@ export default function Home() {
           </div>
           <form onSubmit={submitLogin} className="space-y-5">
             <input value={loginUser} onChange={(event) => setLoginUser(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Usuario" required />
-            <input type="password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Contrasena" required />
+            <input type="password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Contraseña" required />
             {loginError ? <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600">{loginError}</div> : null}
-            <button type="submit" disabled={submitting} className="w-full rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/20 disabled:opacity-60">Iniciar sesion</button>
+            <button type="submit" disabled={submitting} className="w-full rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/20 disabled:opacity-60">Iniciar sesión</button>
           </form>
           <p className="mt-8 text-center text-xs text-slate-400">Dept. Sistemas 2026</p>
         </div>
@@ -297,7 +297,7 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <Image src="/logo.svg" alt="Logo" width={96} height={72} priority className="h-auto w-20 rounded-3xl bg-slate-50 p-2" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue">Gestion de material IT</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue">Gestión de material IT</p>
               <h1 className="mt-2 text-3xl font-bold text-slate-950">Stock visible y movimientos por serie</h1>
               <p className="mt-2 text-sm text-slate-500">DB {databaseMode === "remote" ? "remota" : "local"} - {products.length} productos visibles</p>
             </div>
