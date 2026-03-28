@@ -47,12 +47,12 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
   },
   {
     slug: "ratones",
-    name: "Ratones",
-    sku: "IT-MOU",
-    description: "Ratones para onboarding y reposición inmediata.",
+    name: "Logitech M185",
+    sku: "IT-M185",
+    description: "Ratones Logitech M185 para onboarding y reposición inmediata.",
     highlight: "Consumible controlado",
     displayOrder: 5,
-    imagePath: "/products/ratones.svg",
+    imagePath: "/products/ratones.png",
   },
   {
     slug: "auriculares",
