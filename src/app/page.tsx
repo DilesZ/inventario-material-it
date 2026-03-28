@@ -7,11 +7,13 @@ import {
   ArrowUpRight,
   Boxes,
   Clock3,
+  Filter,
   LayoutGrid,
   PackageCheck,
   PackageMinus,
   PackagePlus,
   ScanSearch,
+  Search,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -133,6 +135,9 @@ export default function Home() {
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [mode, setMode] = useState<"in" | "out">("in");
+  const [productSearch, setProductSearch] = useState("");
+  const [movementSearch, setMovementSearch] = useState("");
+  const [movementFilter, setMovementFilter] = useState<"all" | "in" | "out">("all");
   const [inForm, setInForm] = useState({ quantity: "1", provider: "", movementDate: today(), serialsText: "" });
   const [outForm, setOutForm] = useState({ quantity: "1", recipient: "", movementDate: today(), serialsText: "" });
 
@@ -159,6 +164,34 @@ export default function Home() {
   const selectedMovementCount = detail?.recentMovements.length ?? 0;
   const quantityMatches =
     mode === "in" ? Number(inForm.quantity || 0) === inSerialCount : Number(outForm.quantity || 0) === outSerialCount;
+  const filteredProducts = useMemo(() => {
+    const searchTerm = productSearch.trim().toLowerCase();
+    if (!searchTerm) {
+      return products;
+    }
+
+    return products.filter((product) =>
+      [product.name, product.sku, product.description, product.highlight].some((value) => value.toLowerCase().includes(searchTerm))
+    );
+  }, [products, productSearch]);
+  const filteredMovements = useMemo(() => {
+    const searchTerm = movementSearch.trim().toLowerCase();
+
+    return movements.filter((movement) => {
+      const matchesType = movementFilter === "all" || movement.type === movementFilter;
+      const matchesSearch =
+        !searchTerm ||
+        [
+          movement.productName,
+          movement.productSku,
+          movement.serialNumber,
+          movement.partnerName,
+          movement.unitStatus,
+        ].some((value) => value.toLowerCase().includes(searchTerm));
+
+      return matchesType && matchesSearch;
+    });
+  }, [movementFilter, movementSearch, movements]);
 
   const loadProducts = useCallback(async (preferredSlug?: string | null) => {
     setLoadingProducts(true);
@@ -564,8 +597,23 @@ export default function Home() {
                   </div>
                   {loadingProducts ? <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-sm font-semibold text-brand-blue">Actualizando...</span> : null}
                 </div>
+                <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto]">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={productSearch}
+                      onChange={(event) => setProductSearch(event.target.value)}
+                      placeholder="Buscar por producto, SKU, descripción o etiqueta"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                    <Filter className="h-4 w-4 text-brand-blue" />
+                    {filteredProducts.length} de {products.length} productos
+                  </div>
+                </div>
                 <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                  {products.map((product) => {
+                  {filteredProducts.map((product) => {
                     const isActive = product.slug === activeSlug;
                     return (
                       <article
@@ -641,6 +689,12 @@ export default function Home() {
                     );
                   })}
                 </div>
+                {!filteredProducts.length ? (
+                  <div className="mt-4 rounded-[1.5rem] border border-dashed border-slate-300 bg-white px-5 py-8 text-center">
+                    <p className="text-base font-semibold text-slate-900">No hay productos que coincidan con la búsqueda</p>
+                    <p className="mt-2 text-sm text-slate-500">Prueba con otro nombre, SKU o etiqueta para localizar el producto más rápido.</p>
+                  </div>
+                ) : null}
               </div>
             </section>
 
@@ -680,6 +734,39 @@ export default function Home() {
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Movimientos</p>
                         <p className="mt-2 text-3xl font-bold text-slate-950">{selectedMovementCount}</p>
                       </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setMode("in")}
+                        className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-left transition hover:border-emerald-300 hover:bg-emerald-100/70"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-xl bg-emerald-500 p-2 text-white">
+                            <PackagePlus className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-950">Alta rápida</p>
+                            <p className="mt-1 text-xs text-slate-500">Añade stock nuevo con proveedor y series.</p>
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMode("out")}
+                        className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-4 text-left transition hover:border-amber-300 hover:bg-amber-100/70"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-xl bg-amber-500 p-2 text-white">
+                            <PackageMinus className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-950">Entrega rápida</p>
+                            <p className="mt-1 text-xs text-slate-500">Prepara salidas seleccionando series disponibles.</p>
+                          </div>
+                        </div>
+                      </button>
                     </div>
 
                     <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-white p-1.5 shadow-sm">
@@ -856,8 +943,14 @@ export default function Home() {
                     </div>
                   </>
                 ) : (
-                  <div className="flex min-h-80 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300 bg-white text-sm text-slate-500">
-                    Selecciona un producto para ver sus existencias y sus movimientos.
+                  <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-8 text-center">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-500">
+                      <LayoutGrid className="h-7 w-7" />
+                    </div>
+                    <h3 className="mt-5 text-lg font-semibold text-slate-950">Selecciona un producto para empezar</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Verás su imagen, estado, accesos rápidos, formularios de entrada y salida, series disponibles y últimos movimientos.
+                    </p>
                   </div>
                 )}
               </div>
@@ -865,14 +958,35 @@ export default function Home() {
           </main>
 
           <section className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white lg:px-8 lg:py-8">
-              <div>
+            <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Registro horizontal</p>
               <h2 className="mt-2 text-2xl font-bold">Historial completo de movimientos</h2>
               <p className="mt-2 max-w-3xl text-sm text-slate-300">Cada operación queda reflejada con una lectura más clara, jerarquía visual reforzada y una tabla horizontal más cómoda para trabajo intensivo.</p>
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_auto_auto_auto]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={movementSearch}
+                  onChange={(event) => setMovementSearch(event.target.value)}
+                  placeholder="Buscar por producto, SKU, serie, contacto o estado"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-cyan-300/60 focus:ring-4 focus:ring-cyan-300/10"
+                />
+              </div>
+              <div className="inline-flex rounded-2xl border border-white/10 bg-white/5 p-1">
+                {(["all", "in", "out"] as const).map((filterValue) => (
+                  <button
+                    key={filterValue}
+                    type="button"
+                    onClick={() => setMovementFilter(filterValue)}
+                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${movementFilter === filterValue ? "bg-white text-slate-950" : "text-slate-300 hover:text-white"}`}
+                  >
+                    {filterValue === "all" ? "Todo" : filterValue === "in" ? "Entradas" : "Salidas"}
+                  </button>
+                ))}
+              </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                {loadingMovements ? "Actualizando historial..." : `${movements.length} movimientos visibles`}
+                {loadingMovements ? "Actualizando historial..." : `${filteredMovements.length} movimientos visibles`}
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
                 Desplaza horizontalmente para ver todos los campos
@@ -881,7 +995,7 @@ export default function Home() {
 
             <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900/80 shadow-2xl shadow-slate-950/25">
             {loadingMovements ? <div className="px-5 py-6 text-sm text-slate-300">Cargando historial de movimientos...</div> : null}
-            {!loadingMovements && movements.length ? (
+            {!loadingMovements && filteredMovements.length ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-[1260px] text-left text-sm">
                     <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-[0.18em] text-slate-300">
@@ -897,7 +1011,7 @@ export default function Home() {
                     </tr>
                   </thead>
                   <tbody>
-                    {movements.map((movement) => (
+                    {filteredMovements.map((movement) => (
                         <tr key={movement.id} className="border-t border-white/8 text-slate-100 odd:bg-white/[0.02] even:bg-transparent hover:bg-white/[0.05]">
                           <td className="px-4 py-4 whitespace-nowrap font-semibold">{formatDate(movement.movementDate)}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-slate-300">{formatDateTime(movement.createdAt)}</td>
@@ -930,7 +1044,12 @@ export default function Home() {
                   </table>
                 </div>
             ) : null}
-            {!loadingMovements && !movements.length ? <div className="px-5 py-6 text-sm text-slate-300">Todavía no hay movimientos registrados.</div> : null}
+            {!loadingMovements && !filteredMovements.length ? (
+              <div className="px-5 py-10 text-center">
+                <p className="text-base font-semibold text-white">No hay movimientos para los filtros actuales</p>
+                <p className="mt-2 text-sm text-slate-300">Ajusta la búsqueda o cambia el filtro para recuperar registros del historial.</p>
+              </div>
+            ) : null}
           </div>
           </section>
         </div>
