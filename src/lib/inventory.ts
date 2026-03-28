@@ -66,6 +66,14 @@ type OutgoingMovementInput = {
   serialNumbers: string[];
 };
 
+type CreateProductInput = {
+  name: string;
+  sku: string;
+  description: string;
+  highlight: string;
+  imagePath?: string;
+};
+
 function getRowValue(row: unknown, key: string) {
   return (row as Record<string, unknown>)[key];
 }
@@ -466,5 +474,56 @@ export async function clearAllMovements() {
 
   return {
     message: "Se han eliminado todos los movimientos del inventario operativo.",
+  };
+}
+
+export async function createCustomProduct(input: CreateProductInput) {
+  await ensureDbReady();
+
+  const name = input.name.trim();
+  const sku = input.sku.trim();
+  const description = input.description.trim();
+  const highlight = input.highlight.trim();
+  const imagePath = input.imagePath?.trim() || "/logo.png";
+
+  if (!name || !sku) {
+    throw new Error("El nombre y el SKU son obligatorios.");
+  }
+
+  // Generar slug a partir del nombre
+  const slug = name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  // Verificar si ya existe el slug o el sku
+  const existing = await db.execute({
+    sql: "SELECT id FROM products WHERE slug = ? OR sku = ? LIMIT 1",
+    args: [slug, sku],
+  });
+
+  if (existing.rows.length > 0) {
+    throw new Error("Ya existe un producto con ese nombre o SKU.");
+  }
+
+  // Obtener el orden máximo actual
+  const maxOrderResult = await db.execute("SELECT MAX(display_order) as maxOrder FROM products");
+  const nextOrder = asNumber(maxOrderResult.rows[0], "maxOrder") + 1;
+
+  await db.execute({
+    sql: `INSERT INTO products (slug, name, sku, description, highlight, display_order)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [slug, name, sku, description, highlight, nextOrder],
+  });
+
+  // Nota: Si se quisiera guardar la imagen de forma permanente en el catálogo estático,
+  // habría que modificar el archivo catalog.ts, pero como estamos usando DB,
+  // el producto persistirá en la base de datos local/remota.
+  
+  return {
+    message: `Producto "${name}" creado correctamente.`,
+    product: { slug, name, sku },
   };
 }

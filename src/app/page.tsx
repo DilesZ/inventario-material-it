@@ -136,6 +136,8 @@ export default function Home() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [newProductForm, setNewProductForm] = useState({ name: "", sku: "", description: "", highlight: "", imagePath: "" });
   const [runningAdminAction, setRunningAdminAction] = useState<"units" | "movements" | null>(null);
   const [mode, setMode] = useState<"in" | "out" | null>(null);
   const [productSearch, setProductSearch] = useState("");
@@ -433,6 +435,35 @@ export default function Home() {
     }
   };
 
+  const submitCreateProduct = async (event: FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch("/api/products/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProductForm),
+      });
+
+      const payload = (await response.json()) as ApiResponse;
+      if (!response.ok) {
+        throw new Error(payload.error || "No se pudo crear el producto.");
+      }
+
+      setMessage(payload.message || "Producto creado correctamente.");
+      setShowCreateProduct(false);
+      setNewProductForm({ name: "", sku: "", description: "", highlight: "", imagePath: "" });
+      await refreshInventoryView();
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "No se pudo crear el producto.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleAdminAction = async (target: "units" | "movements") => {
     const shouldReset = window.confirm(
       target === "units" ? "Esto eliminará todas las unidades de forma definitiva. ¿Quieres continuar?" : "Esto eliminará todos los movimientos de forma definitiva. ¿Quieres continuar?"
@@ -573,6 +604,14 @@ export default function Home() {
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
+                  onClick={() => setShowCreateProduct(true)}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-cyan-600 shadow-lg shadow-cyan-500/20"
+                >
+                  <PackagePlus className="h-4 w-4" />
+                  Nuevo producto
+                </button>
+                <button
+                  type="button"
                   onClick={() => void refreshInventoryView()}
                   disabled={loadingProducts || loadingMovements || loadingDetail || runningAdminAction !== null}
                   className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-50"
@@ -616,6 +655,47 @@ export default function Home() {
           </header>
           {message ? <div className="mx-6 mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 lg:mx-8">{message}</div> : null}
           {error ? <div className="mx-6 mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 lg:mx-8">{error}</div> : null}
+
+          {showCreateProduct ? (
+            <div className="mx-6 mt-6 overflow-hidden rounded-[1.75rem] border border-cyan-200 bg-cyan-50/30 p-6 lg:mx-8">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-950">Crear producto personalizado</h3>
+                  <p className="text-sm text-slate-500">Rellena los datos para añadir un nuevo producto al catálogo operativo.</p>
+                </div>
+                <button onClick={() => setShowCreateProduct(false)} className="text-sm font-semibold text-slate-400 hover:text-slate-600">Cancelar</button>
+              </div>
+              <form onSubmit={submitCreateProduct} className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Nombre del producto</label>
+                    <input required value={newProductForm.name} onChange={(e) => setNewProductForm(prev => ({ ...prev, name: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-cyan-500/10" placeholder="Ej: Monitor Dell 27\"" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">SKU / Referencia</label>
+                    <input required value={newProductForm.sku} onChange={(e) => setNewProductForm(prev => ({ ...prev, sku: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-cyan-500/10" placeholder="Ej: IT-DELL27" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Etiqueta / Highlight</label>
+                    <input value={newProductForm.highlight} onChange={(e) => setNewProductForm(prev => ({ ...prev, highlight: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-cyan-500/10" placeholder="Ej: Puesto avanzado" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Descripción corta</label>
+                    <textarea value={newProductForm.description} onChange={(e) => setNewProductForm(prev => ({ ...prev, description: e.target.value }))} rows={2} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-cyan-500/10" placeholder="Breve descripción del uso o destino del producto" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">URL de la imagen (Opcional)</label>
+                    <input value={newProductForm.imagePath} onChange={(e) => setNewProductForm(prev => ({ ...prev, imagePath: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-cyan-500/10" placeholder="https://ejemplo.com/foto.png" />
+                  </div>
+                  <button type="submit" disabled={submitting} className="mt-2 w-full rounded-2xl bg-slate-950 py-4 text-sm font-bold text-white shadow-xl shadow-slate-950/20 transition hover:bg-cyan-600 disabled:opacity-50">
+                    {submitting ? "Creando producto..." : "Dar de alta producto"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : null}
 
           <main className="px-6 py-6 lg:px-8 lg:py-8">
             <section className="space-y-8">
