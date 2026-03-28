@@ -1,4 +1,5 @@
 import type { InStatement } from "@libsql/client";
+import { DEFAULT_PRODUCTS } from "@/lib/catalog";
 import { databaseMode, db, ensureDbReady } from "@/lib/db";
 
 export type ProductSummary = {
@@ -13,6 +14,7 @@ export type ProductSummary = {
   availableUnits: number;
   assignedUnits: number;
   lastMovementAt: string | null;
+  imagePath: string;
 };
 
 export type ProductUnit = {
@@ -27,10 +29,14 @@ export type ProductUnit = {
 export type MovementRecord = {
   id: number;
   type: "in" | "out";
+  productSlug: string;
+  productName: string;
+  productSku: string;
   serialNumber: string;
   partnerName: string;
   movementDate: string;
   createdAt: string;
+  unitStatus: "available" | "assigned";
 };
 
 export type ProductDetail = ProductSummary & {
@@ -82,10 +88,18 @@ function asNumber(row: unknown, key: string) {
   return Number(value ?? 0);
 }
 
+const productCatalog = new Map(DEFAULT_PRODUCTS.map((product) => [product.slug, product]));
+
+function resolveImagePath(slug: string) {
+  return productCatalog.get(slug)?.imagePath ?? "/logo.png";
+}
+
 function mapProductSummary(row: unknown): ProductSummary {
+  const slug = asString(row, "slug");
+
   return {
     id: asNumber(row, "id"),
-    slug: asString(row, "slug"),
+    slug,
     name: asString(row, "name"),
     sku: asString(row, "sku"),
     description: asString(row, "description"),
@@ -95,6 +109,7 @@ function mapProductSummary(row: unknown): ProductSummary {
     availableUnits: asNumber(row, "availableUnits"),
     assignedUnits: asNumber(row, "assignedUnits"),
     lastMovementAt: asNullableString(row, "lastMovementAt"),
+    imagePath: resolveImagePath(slug),
   };
 }
 
@@ -113,10 +128,14 @@ function mapMovement(row: unknown): MovementRecord {
   return {
     id: asNumber(row, "id"),
     type: asString(row, "type") === "out" ? "out" : "in",
+    productSlug: asString(row, "productSlug"),
+    productName: asString(row, "productName"),
+    productSku: asString(row, "productSku"),
     serialNumber: asString(row, "serialNumber"),
     partnerName: asString(row, "partnerName"),
     movementDate: asString(row, "movementDate"),
     createdAt: asString(row, "createdAt"),
+    unitStatus: asString(row, "unitStatus") === "assigned" ? "assigned" : "available",
   };
 }
 
@@ -230,16 +249,22 @@ export async function getProductDetail(slug: string): Promise<ProductDetail> {
   });
   const movementsResult = await db.execute({
     sql: `SELECT
-      id,
-      movement_type AS type,
-      serial_number AS serialNumber,
-      partner_name AS partnerName,
-      movement_date AS movementDate,
-      created_at AS createdAt
-    FROM movements
-    WHERE product_id = ?
-    ORDER BY movement_date DESC, id DESC
-    LIMIT 12`,
+      m.id,
+      m.movement_type AS type,
+      p.slug AS productSlug,
+      p.name AS productName,
+      p.sku AS productSku,
+      m.serial_number AS serialNumber,
+      m.partner_name AS partnerName,
+      m.movement_date AS movementDate,
+      m.created_at AS createdAt,
+      COALESCE(u.status, 'available') AS unitStatus
+    FROM movements m
+    INNER JOIN products p ON p.id = m.product_id
+    LEFT JOIN units u ON u.product_id = m.product_id AND u.serial_number = m.serial_number
+    WHERE m.product_id = ?
+    ORDER BY m.movement_date DESC, m.id DESC
+    LIMIT 20`,
     args: [product.id],
   });
 
@@ -250,6 +275,31 @@ export async function getProductDetail(slug: string): Promise<ProductDetail> {
     availableSerials: units.filter((unit) => unit.status === "available"),
     assignedSerials: units.filter((unit) => unit.status === "assigned"),
     recentMovements: movementsResult.rows.map(mapMovement),
+  };
+}
+
+export async function getMovementTimeline() {
+  await ensureDbReady();
+
+  const result = await db.execute(`SELECT
+      m.id,
+      m.movement_type AS type,
+      p.slug AS productSlug,
+      p.name AS productName,
+      p.sku AS productSku,
+      m.serial_number AS serialNumber,
+      m.partner_name AS partnerName,
+      m.movement_date AS movementDate,
+      m.created_at AS createdAt,
+      COALESCE(u.status, 'available') AS unitStatus
+    FROM movements m
+    INNER JOIN products p ON p.id = m.product_id
+    LEFT JOIN units u ON u.product_id = m.product_id AND u.serial_number = m.serial_number
+    ORDER BY m.movement_date DESC, m.id DESC
+    LIMIT 200`);
+
+  return {
+    movements: result.rows.map(mapMovement),
   };
 }
 

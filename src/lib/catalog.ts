@@ -5,6 +5,7 @@ export type CatalogProduct = {
   description: string;
   highlight: string;
   displayOrder: number;
+  imagePath: string;
 };
 
 export const DEFAULT_PRODUCTS: CatalogProduct[] = [
@@ -15,6 +16,7 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
     description: "Equipos listos para altas, reposiciones y sustituciones.",
     highlight: "Reposición rápida",
     displayOrder: 1,
+    imagePath: "/products/portatiles.svg",
   },
   {
     slug: "monitores",
@@ -23,6 +25,7 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
     description: "Pantallas para puestos fijos y ampliaciones de escritorio.",
     highlight: "Puestos híbridos",
     displayOrder: 2,
+    imagePath: "/products/monitores.svg",
   },
   {
     slug: "docks",
@@ -31,6 +34,7 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
     description: "Bases para conexión rápida en oficinas y salas.",
     highlight: "Conectividad",
     displayOrder: 3,
+    imagePath: "/products/docks.svg",
   },
   {
     slug: "teclados",
@@ -39,6 +43,7 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
     description: "Periféricos de sustitución y nuevos puestos de trabajo.",
     highlight: "Stock diario",
     displayOrder: 4,
+    imagePath: "/products/teclados.svg",
   },
   {
     slug: "ratones",
@@ -47,6 +52,7 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
     description: "Ratones para onboarding y reposición inmediata.",
     highlight: "Consumible controlado",
     displayOrder: 5,
+    imagePath: "/products/ratones.svg",
   },
   {
     slug: "auriculares",
@@ -55,6 +61,7 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
     description: "Auriculares para reuniones y atención remota.",
     highlight: "Colaboración",
     displayOrder: 6,
+    imagePath: "/products/auriculares.svg",
   },
   {
     slug: "webcams",
@@ -63,5 +70,6 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
     description: "Cámaras para puestos de videollamada y salas ligeras.",
     highlight: "Videoconferencia",
     displayOrder: 7,
+    imagePath: "/products/webcams.svg",
   },
 ];

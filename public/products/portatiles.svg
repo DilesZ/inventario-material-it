@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" fill="none">
+<rect width="1200" height="800" rx="48" fill="#081126"/>
+<rect x="56" y="56" width="1088" height="688" rx="40" fill="url(#a)"/>
+<rect x="224" y="164" width="752" height="424" rx="26" fill="#0F172A"/>
+<rect x="252" y="192" width="696" height="368" rx="18" fill="url(#b)"/>
+<rect x="300" y="248" width="296" height="188" rx="20" fill="#0EA5E9" fill-opacity=".18"/>
+<rect x="624" y="248" width="276" height="28" rx="14" fill="#BFDBFE"/>
+<rect x="624" y="304" width="220" height="22" rx="11" fill="#7DD3FC"/>
+<rect x="624" y="354" width="178" height="22" rx="11" fill="#38BDF8"/>
+<rect x="624" y="404" width="248" height="22" rx="11" fill="#0EA5E9"/>
+<rect x="388" y="604" width="424" height="30" rx="15" fill="#CBD5E1"/>
+<path d="M164 604H1036L1108 670H92L164 604Z" fill="#E2E8F0"/>
+<circle cx="356" cy="342" r="72" fill="#22D3EE"/>
+<path d="M356 294C385.823 294 410 318.177 410 348C410 377.823 385.823 402 356 402C326.177 402 302 377.823 302 348C302 318.177 326.177 294 356 294Z" fill="#F8FAFC"/>
+<path d="M356 312L381 338H365V384H347V338H331L356 312Z" fill="#0EA5E9"/>
+<defs>
+<linearGradient id="a" x1="120" y1="80" x2="1080" y2="744" gradientUnits="userSpaceOnUse">
+<stop stop-color="#1E293B"/>
+<stop offset="1" stop-color="#0F172A"/>
+</linearGradient>
+<linearGradient id="b" x1="252" y1="192" x2="948" y2="560" gradientUnits="userSpaceOnUse">
+<stop stop-color="#1D4ED8"/>
+<stop offset="1" stop-color="#0F172A"/>
+</linearGradient>
+</defs>
+</svg>

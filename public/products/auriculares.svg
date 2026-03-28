@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" fill="none">
+<rect width="1200" height="800" rx="48" fill="#07101D"/>
+<rect x="94" y="86" width="1012" height="628" rx="46" fill="url(#a)"/>
+<path d="M342 430C342 288.615 456.615 174 598 174H602C743.385 174 858 288.615 858 430V452H790V430C790 326.172 705.828 242 602 242H598C494.172 242 410 326.172 410 430V452H342V430Z" fill="#E2E8F0"/>
+<rect x="322" y="428" width="132" height="218" rx="48" fill="#F8FAFC"/>
+<rect x="746" y="428" width="132" height="218" rx="48" fill="#F8FAFC"/>
+<rect x="350" y="462" width="76" height="150" rx="32" fill="#38BDF8"/>
+<rect x="774" y="462" width="76" height="150" rx="32" fill="#38BDF8"/>
+<path d="M810 582C810 632.811 768.811 674 718 674H612V608H718C732.359 608 744 596.359 744 582V568H810V582Z" fill="#BFDBFE"/>
+<rect x="532" y="588" width="116" height="74" rx="32" fill="#F8FAFC"/>
+<defs>
+<linearGradient id="a" x1="94" y1="86" x2="1106" y2="714" gradientUnits="userSpaceOnUse">
+<stop stop-color="#0EA5E9"/>
+<stop offset="1" stop-color="#1E293B"/>
+</linearGradient>
+</defs>
+</svg>
