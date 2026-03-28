@@ -56,12 +56,12 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
   },
   {
     slug: "auriculares",
-    name: "Auriculares",
-    sku: "IT-HSP",
-    description: "Auriculares para reuniones y atención remota.",
+    name: "Auriculares NGS",
+    sku: "IT-NGS-HSP",
+    description: "Auriculares NGS para reuniones y atención remota.",
     highlight: "Colaboración",
     displayOrder: 6,
-    imagePath: "/products/auriculares.svg",
+    imagePath: "/products/auriculares.png",
   },
   {
     slug: "webcams",
@@ -71,5 +71,14 @@ export const DEFAULT_PRODUCTS: CatalogProduct[] = [
     highlight: "Videoconferencia",
     displayOrder: 7,
     imagePath: "/products/webcams.svg",
+  },
+  {
+    slug: "soportes",
+    name: "Soporte TooQ",
+    sku: "IT-TOOQ-SP",
+    description: "Soporte TooQ para monitores y mejora de ergonomía en el puesto.",
+    highlight: "Ergonomía",
+    displayOrder: 8,
+    imagePath: "/products/SoporteTooq.PNG",
   },
 ];
