@@ -176,6 +176,36 @@ export default function Home() {
       [product.name, product.sku, product.description, product.highlight].some((value) => value.toLowerCase().includes(searchTerm))
     );
   }, [products, productSearch]);
+  const filteredMovements = useMemo(() => {
+    const searchTerm = movementSearch.trim().toLowerCase();
+
+    return movements.filter((movement) => {
+      const matchesType = movementFilter === "all" || movement.type === movementFilter;
+      const matchesSearch =
+        !searchTerm ||
+        [
+          movement.productName,
+          movement.productSku,
+          movement.serialNumber,
+          movement.partnerName,
+          movement.unitStatus,
+        ].some((value) => value.toLowerCase().includes(searchTerm));
+
+      return matchesType && matchesSearch;
+    });
+  }, [movementFilter, movementSearch, movements]);
+  const filteredMovementStats = useMemo(
+    () =>
+      filteredMovements.reduce(
+        (summary, movement) => ({
+          entries: summary.entries + (movement.type === "in" ? 1 : 0),
+          exits: summary.exits + (movement.type === "out" ? 1 : 0),
+          available: summary.available + (movement.unitStatus === "available" ? 1 : 0),
+        }),
+        { entries: 0, exits: 0, available: 0 }
+      ),
+    [filteredMovements]
+  );
 
   const loadProducts = useCallback(async (preferredSlug?: string | null) => {
     setLoadingProducts(true);
@@ -752,6 +782,144 @@ export default function Home() {
                     <p className="mt-2 text-sm text-slate-500">Prueba con otro nombre, SKU o etiqueta para localizar el producto más rápido.</p>
                   </div>
                 ) : null}
+              </div>
+
+              <div className="overflow-hidden rounded-[1.75rem] bg-slate-950 text-white shadow-2xl shadow-slate-950/30">
+                <div className="border-b border-white/10 px-5 py-5">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Histórico global</p>
+                      <h3 className="mt-2 text-2xl font-bold">Movimientos recientes</h3>
+                      <p className="mt-2 text-sm text-slate-300">Recupera el histórico inferior con filtros por tipo, búsqueda y acceso directo al producto.</p>
+                    </div>
+                    {loadingMovements ? (
+                      <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-sm font-semibold text-cyan-200">
+                        Actualizando...
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto]">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                      <input
+                        value={movementSearch}
+                        onChange={(event) => setMovementSearch(event.target.value)}
+                        placeholder="Buscar por producto, SKU, serie, contacto o estado"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/40 focus:ring-4 focus:ring-cyan-300/10"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { value: "all", label: "Todo" },
+                        { value: "in", label: "Entradas" },
+                        { value: "out", label: "Salidas" },
+                      ] as const).map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setMovementFilter(option.value)}
+                          className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                            movementFilter === option.value
+                              ? "bg-white text-slate-950"
+                              : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 md:grid-cols-3">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Entradas visibles</p>
+                      <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.entries}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Salidas visibles</p>
+                      <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.exits}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Con estado disponible</p>
+                      <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.available}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-hidden">
+                  {loadingMovements ? <div className="px-5 py-6 text-sm text-slate-300">Cargando historial de movimientos...</div> : null}
+                  {!loadingMovements && filteredMovements.length ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-[1180px] text-left text-sm">
+                        <thead className="bg-slate-900 text-xs uppercase tracking-[0.18em] text-slate-300">
+                          <tr>
+                            <th className="sticky left-0 z-10 bg-slate-900 px-4 py-4 font-semibold">Fecha mov.</th>
+                            <th className="px-4 py-4 font-semibold">Registro</th>
+                            <th className="px-4 py-4 font-semibold">Producto</th>
+                            <th className="px-4 py-4 font-semibold">SKU</th>
+                            <th className="px-4 py-4 font-semibold">Tipo</th>
+                            <th className="px-4 py-4 font-semibold">Serie</th>
+                            <th className="px-4 py-4 font-semibold">Proveedor / destinatario</th>
+                            <th className="px-4 py-4 font-semibold">Estado actual</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredMovements.map((movement) => (
+                            <tr
+                              key={movement.id}
+                              className="border-t border-white/8 text-slate-100 odd:bg-white/[0.02] even:bg-transparent hover:bg-white/[0.05]"
+                            >
+                              <td className="sticky left-0 z-[1] bg-slate-950 px-4 py-4 whitespace-nowrap font-semibold">
+                                {formatDate(movement.movementDate)}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-4 text-slate-300">{formatDateTime(movement.createdAt)}</td>
+                              <td className="px-4 py-4">
+                                <button
+                                  type="button"
+                                  onClick={() => activateProduct(movement.productSlug, movement.type)}
+                                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left transition hover:bg-white/10"
+                                >
+                                  <span className="block font-semibold text-white">{movement.productName}</span>
+                                  <span className="mt-1 block text-xs text-slate-300">Abrir producto</span>
+                                </button>
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-4 text-slate-300">{movement.productSku}</td>
+                              <td className="whitespace-nowrap px-4 py-4">
+                                <span
+                                  className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                                    movement.type === "in" ? "bg-cyan-300 text-slate-950" : "bg-white text-slate-950"
+                                  }`}
+                                >
+                                  {movement.type === "in" ? "Entrada" : "Salida"}
+                                </span>
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-4 font-semibold text-white">{movement.serialNumber}</td>
+                              <td className="px-4 py-4 text-slate-300">{movement.partnerName}</td>
+                              <td className="whitespace-nowrap px-4 py-4">
+                                <span
+                                  className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                                    movement.unitStatus === "available"
+                                      ? "bg-emerald-400/20 text-emerald-200"
+                                      : "bg-amber-400/20 text-amber-200"
+                                  }`}
+                                >
+                                  {movement.unitStatus === "available" ? "Disponible" : "Asignada"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
+                  {!loadingMovements && !filteredMovements.length ? (
+                    <div className="px-5 py-10 text-center">
+                      <p className="text-base font-semibold text-white">No hay movimientos para los filtros actuales</p>
+                      <p className="mt-2 text-sm text-slate-300">Ajusta la búsqueda o cambia el filtro para recuperar registros del histórico.</p>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </section>
           </main>
