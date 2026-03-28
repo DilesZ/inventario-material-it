@@ -2,13 +2,9 @@
 
 import Image from "next/image";
 import {
-  Activity,
-  ArrowDownLeft,
   ArrowUpRight,
-  Boxes,
   Clock3,
   Filter,
-  LayoutGrid,
   PackageCheck,
   PackageMinus,
   PackagePlus,
@@ -571,11 +567,6 @@ export default function Home() {
                   <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-200">
                     Gestiona productos, Nº de Serie y movimientos con control administrativo total sobre el inventario.
                   </p>
-                  <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.18em]">
-                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">DB {databaseMode === "remote" ? "remota" : "local"}</span>
-                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">{formatCompactNumber(products.length)} productos</span>
-                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">{formatCompactNumber(movements.length)} movimientos</span>
-                  </div>
                 </div>
               </div>
 
@@ -612,29 +603,6 @@ export default function Home() {
                 </button>
               </div>
             </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
-                <LayoutGrid className="h-5 w-5 text-cyan-200" />
-                <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Productos</p>
-                <p className="mt-2 text-3xl font-bold">{formatCompactNumber(dashboardStats.totalProducts)}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
-                <Boxes className="h-5 w-5 text-cyan-200" />
-                <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Unidades totales</p>
-                <p className="mt-2 text-3xl font-bold">{formatCompactNumber(dashboardStats.totalUnits)}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
-                <PackageCheck className="h-5 w-5 text-cyan-200" />
-                <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Disponibles</p>
-                <p className="mt-2 text-3xl font-bold">{formatCompactNumber(dashboardStats.availableUnits)}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
-                <PackageMinus className="h-5 w-5 text-cyan-200" />
-                <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Asignadas</p>
-                <p className="mt-2 text-3xl font-bold">{formatCompactNumber(dashboardStats.assignedUnits)}</p>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -645,42 +613,12 @@ export default function Home() {
               <h2 className="mt-2 text-3xl font-bold text-slate-950">Inventario activo con trazabilidad</h2>
               <p className="mt-2 text-sm text-slate-500">Gestiona unidades directamente desde las tarjetas y revisa el stock en tiempo real.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              Último producto activo: <span className="font-semibold text-slate-950">{selectedProduct?.name ?? "Sin selección"}</span>
-            </div>
           </header>
           {message ? <div className="mx-6 mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 lg:mx-8">{message}</div> : null}
           {error ? <div className="mx-6 mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 lg:mx-8">{error}</div> : null}
 
           <main className="px-6 py-6 lg:px-8 lg:py-8">
             <section className="space-y-8">
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Disponibles</p>
-                    <PackageCheck className="h-4 w-4 text-brand-blue" />
-                  </div>
-                  <p className="mt-3 text-3xl font-bold text-slate-950">{formatCompactNumber(dashboardStats.availableUnits)}</p>
-                  <p className="mt-2 text-sm text-slate-500">Unidades listas para asignar o entregar.</p>
-                </div>
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Asignadas</p>
-                    <PackageMinus className="h-4 w-4 text-slate-950" />
-                  </div>
-                  <p className="mt-3 text-3xl font-bold text-slate-950">{formatCompactNumber(dashboardStats.assignedUnits)}</p>
-                  <p className="mt-2 text-sm text-slate-500">Material actualmente entregado o en uso.</p>
-                </div>
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Actividad</p>
-                    <Activity className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <p className="mt-3 text-3xl font-bold text-slate-950">{formatCompactNumber(movements.length)}</p>
-                  <p className="mt-2 text-sm text-slate-500">Movimientos totales registrados.</p>
-                </div>
-              </div>
-
               <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-5">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
