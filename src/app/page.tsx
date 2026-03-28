@@ -147,7 +147,7 @@ export default function Home() {
   const [movementFilter, setMovementFilter] = useState<"all" | "in" | "out">("all");
   const [inForm, setInForm] = useState({ quantity: "1", provider: "", movementDate: today(), serialsText: "" });
   const [outForm, setOutForm] = useState({ quantity: "1", recipient: "", movementDate: today(), serialsText: "" });
-  const isDevelopmentEnvironment = process.env.NODE_ENV !== "production";
+  const isDevelopmentEnvironment = databaseMode === "local";
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.slug === activeSlug) ?? null,
@@ -572,7 +572,7 @@ export default function Home() {
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
                     <Sparkles className="h-3.5 w-3.5" />
-                    Panel de desarrollo
+                    Herramientas de desarrollo
                   </div>
                   <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Inventario IT con control operativo</h1>
                   <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-200">

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { hasValidSession } from "@/lib/auth";
+import { databaseMode } from "@/lib/db";
 import { clearDevelopmentMovements, clearDevelopmentUnits } from "@/lib/inventory";
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Esta acción solo está disponible en desarrollo." }, { status: 403 });
+  if (databaseMode !== "local") {
+    return NextResponse.json({ error: "Esta acción solo está disponible con base de datos local de desarrollo." }, { status: 403 });
   }
 
   if (!(await hasValidSession())) {
