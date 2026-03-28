@@ -85,17 +85,16 @@ async function initializeDatabase() {
 
   await db.batch(setupStatements, "write");
 
-  const countResult = await db.execute("SELECT COUNT(*) AS total FROM products");
-  const totalProducts = Number(countResult.rows[0]?.total ?? 0);
-
-  if (totalProducts > 0) {
-    return;
-  }
-
   await db.batch(
     DEFAULT_PRODUCTS.map((product) => ({
       sql: `INSERT INTO products (slug, name, sku, description, highlight, display_order)
-            VALUES (?, ?, ?, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(slug) DO UPDATE SET
+              name = excluded.name,
+              sku = excluded.sku,
+              description = excluded.description,
+              highlight = excluded.highlight,
+              display_order = excluded.display_order`,
       args: [
         product.slug,
         product.name,

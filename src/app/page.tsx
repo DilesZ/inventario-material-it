@@ -117,6 +117,10 @@ const formatDateTime = (value: string | null) => {
 
 const today = () => new Date().toISOString().slice(0, 10);
 const formatCompactNumber = (value: number) => new Intl.NumberFormat("es-ES").format(value);
+const getAvailabilityPercentage = (availableUnits: number, totalUnits: number) =>
+  totalUnits > 0 ? Math.round((availableUnits / totalUnits) * 100) : 0;
+const getAssignmentPercentage = (assignedUnits: number, totalUnits: number) =>
+  totalUnits > 0 ? Math.round((assignedUnits / totalUnits) * 100) : 0;
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -192,6 +196,18 @@ export default function Home() {
       return matchesType && matchesSearch;
     });
   }, [movementFilter, movementSearch, movements]);
+  const filteredMovementStats = useMemo(
+    () =>
+      filteredMovements.reduce(
+        (summary, movement) => ({
+          entries: summary.entries + (movement.type === "in" ? 1 : 0),
+          exits: summary.exits + (movement.type === "out" ? 1 : 0),
+          available: summary.available + (movement.unitStatus === "available" ? 1 : 0),
+        }),
+        { entries: 0, exits: 0, available: 0 }
+      ),
+    [filteredMovements]
+  );
 
   const loadProducts = useCallback(async (preferredSlug?: string | null) => {
     setLoadingProducts(true);
@@ -621,14 +637,14 @@ export default function Home() {
                         onClick={() => activateProduct(product.slug)}
                         className={`group cursor-pointer overflow-hidden rounded-[1.75rem] border transition-all duration-200 ${isActive ? "border-brand-blue bg-slate-950 text-white shadow-xl shadow-brand-blue/10" : "border-slate-200 bg-white text-slate-900 shadow-sm hover:-translate-y-1 hover:border-brand-blue/25 hover:shadow-xl hover:shadow-slate-200/70"}`}
                       >
-                        <div className="relative overflow-hidden">
-                          <div className={`absolute inset-0 bg-gradient-to-t ${isActive ? "from-slate-950 via-slate-950/25 to-transparent" : "from-slate-950/15 via-transparent to-transparent"}`} />
+                        <div className={`relative overflow-hidden ${isActive ? "bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_38%),linear-gradient(180deg,_rgba(15,23,42,0.96),_rgba(15,23,42,0.74))]" : "bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.10),_transparent_34%),linear-gradient(180deg,_#f8fafc,_#eef2ff)]"}`}>
+                          <div className={`absolute inset-0 bg-gradient-to-t ${isActive ? "from-slate-950/85 via-slate-950/10 to-transparent" : "from-slate-950/8 via-transparent to-transparent"}`} />
                           <Image
                             src={product.imagePath}
                             alt={product.name}
                             width={480}
                             height={280}
-                            className="h-48 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                            className="h-52 w-full object-contain p-4 transition duration-300 group-hover:scale-[1.03]"
                           />
                           <div className="absolute left-4 top-4 flex items-center gap-2">
                             <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${isActive ? "bg-cyan-300 text-slate-950" : "bg-white/90 text-brand-blue"}`}>{product.sku}</span>
@@ -658,6 +674,24 @@ export default function Home() {
                             <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
                               <p className={`text-xs uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Total</p>
                               <p className="mt-2 text-3xl font-bold">{product.totalUnits}</p>
+                            </div>
+                          </div>
+                          <div className={`mt-4 rounded-[1.25rem] px-4 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-500"}`}>Estado de stock</p>
+                              <span className={`text-xs font-semibold ${isActive ? "text-cyan-100" : "text-slate-600"}`}>
+                                {getAvailabilityPercentage(product.availableUnits, product.totalUnits)}% disponible
+                              </span>
+                            </div>
+                            <div className={`mt-3 h-2 overflow-hidden rounded-full ${isActive ? "bg-white/10" : "bg-slate-200"}`}>
+                              <div
+                                className={`h-full rounded-full ${isActive ? "bg-cyan-300" : "bg-brand-blue"}`}
+                                style={{ width: `${getAvailabilityPercentage(product.availableUnits, product.totalUnits)}%` }}
+                              />
+                            </div>
+                            <div className={`mt-3 flex items-center justify-between text-xs ${isActive ? "text-slate-300" : "text-slate-500"}`}>
+                              <span>{getAssignmentPercentage(product.assignedUnits, product.totalUnits)}% asignado</span>
+                              <span>{product.totalUnits ? "Cobertura visible" : "Sin stock"}</span>
                             </div>
                           </div>
                           <div className="mt-5 grid grid-cols-2 gap-3">
@@ -702,14 +736,14 @@ export default function Home() {
               <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 shadow-inner shadow-white">
                 {selectedProduct ? (
                   <>
-                    <div className="relative overflow-hidden rounded-[1.5rem] bg-white shadow-sm">
+                    <div className="relative overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_40%),linear-gradient(180deg,_#eff6ff,_#dbeafe)] shadow-sm">
                       <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/55 to-transparent" />
                       <Image
                         src={selectedProduct.imagePath}
                         alt={selectedProduct.name}
                         width={900}
                         height={420}
-                        className="h-60 w-full object-cover"
+                        className="h-64 w-full object-contain p-5"
                       />
                       <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
                         <div>
@@ -733,6 +767,26 @@ export default function Home() {
                       <div className="rounded-[1.35rem] bg-white px-4 py-4 shadow-sm">
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Movimientos</p>
                         <p className="mt-2 text-3xl font-bold text-slate-950">{selectedMovementCount}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Balance del producto</p>
+                          <p className="mt-2 text-sm text-slate-600">Lectura rápida de disponibilidad y asignación para tomar decisiones al momento.</p>
+                        </div>
+                        <div className="rounded-full bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+                          {getAvailabilityPercentage(detail?.availableSerials.length ?? selectedProduct.availableUnits, detail?.totalUnits ?? selectedProduct.totalUnits)}% disponible
+                        </div>
+                      </div>
+                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full bg-gradient-to-r from-brand-blue to-cyan-300" style={{ width: `${getAvailabilityPercentage(detail?.availableSerials.length ?? selectedProduct.availableUnits, detail?.totalUnits ?? selectedProduct.totalUnits)}%` }} />
+                      </div>
+                      <div className="mt-3 grid gap-3 text-xs text-slate-500 sm:grid-cols-3">
+                        <p>Disponibles: <span className="font-semibold text-slate-900">{detail?.availableSerials.length ?? selectedProduct.availableUnits}</span></p>
+                        <p>Asignadas: <span className="font-semibold text-slate-900">{detail?.assignedSerials.length ?? selectedProduct.assignedUnits}</span></p>
+                        <p>Total: <span className="font-semibold text-slate-900">{detail?.totalUnits ?? selectedProduct.totalUnits}</span></p>
                       </div>
                     </div>
 
@@ -992,6 +1046,20 @@ export default function Home() {
                 Desplaza horizontalmente para ver todos los campos
               </div>
             </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Entradas visibles</p>
+                <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.entries}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Salidas visibles</p>
+                <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.exits}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Con estado disponible</p>
+                <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.available}</p>
+              </div>
+            </div>
 
             <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900/80 shadow-2xl shadow-slate-950/25">
             {loadingMovements ? <div className="px-5 py-6 text-sm text-slate-300">Cargando historial de movimientos...</div> : null}
@@ -1000,7 +1068,7 @@ export default function Home() {
                   <table className="min-w-[1260px] text-left text-sm">
                     <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-[0.18em] text-slate-300">
                     <tr>
-                      <th className="px-4 py-4 font-semibold">Fecha mov.</th>
+                      <th className="sticky left-0 z-10 bg-slate-900 px-4 py-4 font-semibold">Fecha mov.</th>
                       <th className="px-4 py-4 font-semibold">Registro</th>
                       <th className="px-4 py-4 font-semibold">Producto</th>
                       <th className="px-4 py-4 font-semibold">SKU</th>
@@ -1013,7 +1081,7 @@ export default function Home() {
                   <tbody>
                     {filteredMovements.map((movement) => (
                         <tr key={movement.id} className="border-t border-white/8 text-slate-100 odd:bg-white/[0.02] even:bg-transparent hover:bg-white/[0.05]">
-                          <td className="px-4 py-4 whitespace-nowrap font-semibold">{formatDate(movement.movementDate)}</td>
+                          <td className="sticky left-0 z-[1] bg-slate-900 px-4 py-4 whitespace-nowrap font-semibold">{formatDate(movement.movementDate)}</td>
                           <td className="px-4 py-4 whitespace-nowrap text-slate-300">{formatDateTime(movement.createdAt)}</td>
                         <td className="px-4 py-4">
                           <button
