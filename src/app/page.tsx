@@ -646,13 +646,6 @@ export default function Home() {
         </section>
 
         <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/92 shadow-2xl shadow-slate-950/30">
-          <header className="flex flex-col gap-5 border-b border-slate-200 px-6 py-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue">Panel operativo</p>
-              <h2 className="mt-2 text-3xl font-bold text-slate-950">Inventario activo con trazabilidad</h2>
-              <p className="mt-2 text-sm text-slate-500">Gestiona unidades directamente desde las tarjetas y revisa el stock en tiempo real.</p>
-            </div>
-          </header>
           {message ? <div className="mx-6 mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 lg:mx-8">{message}</div> : null}
           {error ? <div className="mx-6 mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 lg:mx-8">{error}</div> : null}
 
