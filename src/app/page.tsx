@@ -12,6 +12,8 @@ import {
   PackageCheck,
   PackageMinus,
   PackagePlus,
+  RefreshCw,
+  RotateCcw,
   ScanSearch,
   Search,
   ShieldCheck,
@@ -138,12 +140,14 @@ export default function Home() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resettingDevData, setResettingDevData] = useState(false);
   const [mode, setMode] = useState<"in" | "out" | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [movementSearch, setMovementSearch] = useState("");
   const [movementFilter, setMovementFilter] = useState<"all" | "in" | "out">("all");
   const [inForm, setInForm] = useState({ quantity: "1", provider: "", movementDate: today(), serialsText: "" });
   const [outForm, setOutForm] = useState({ quantity: "1", recipient: "", movementDate: today(), serialsText: "" });
+  const isDevelopmentEnvironment = process.env.NODE_ENV !== "production";
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.slug === activeSlug) ?? null,
@@ -371,6 +375,16 @@ export default function Home() {
     });
   };
 
+  const refreshInventoryView = useCallback(async () => {
+    const nextSlug = await loadProducts(activeSlug);
+    await loadMovementTimeline();
+    if (nextSlug) {
+      await loadDetail(nextSlug);
+    } else {
+      setDetail(null);
+    }
+  }, [activeSlug, loadDetail, loadMovementTimeline, loadProducts]);
+
   const submitMovement = async (movementMode: "in" | "out") => {
     if (!activeSlug) {
       return;
@@ -416,15 +430,47 @@ export default function Home() {
 
       setMessage(payload.message || "Movimiento guardado correctamente.");
       setMode(null);
-      const nextSlug = await loadProducts(activeSlug);
-      await loadMovementTimeline();
-      if (nextSlug) {
-        await loadDetail(nextSlug);
-      }
+      await refreshInventoryView();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el movimiento.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDevelopmentReset = async () => {
+    if (!isDevelopmentEnvironment) {
+      return;
+    }
+
+    const shouldReset = window.confirm(
+      "Esto pondrá todas las unidades a cero y borrará todos los movimientos del entorno de desarrollo. ¿Quieres continuar?"
+    );
+
+    if (!shouldReset) {
+      return;
+    }
+
+    setResettingDevData(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch("/api/dev/reset", { method: "POST" });
+      const payload = (await response.json()) as ApiResponse;
+      if (!response.ok) {
+        throw new Error(payload.error || "No se pudo reiniciar el entorno de desarrollo.");
+      }
+
+      setMode(null);
+      setInForm({ quantity: "1", provider: "", movementDate: today(), serialsText: "" });
+      setOutForm({ quantity: "1", recipient: "", movementDate: today(), serialsText: "" });
+      setMessage(payload.message || "Entorno de desarrollo reiniciado.");
+      await refreshInventoryView();
+    } catch (resetError) {
+      setError(resetError instanceof Error ? resetError.message : "No se pudo reiniciar el entorno de desarrollo.");
+    } finally {
+      setResettingDevData(false);
     }
   };
 
@@ -511,31 +557,57 @@ export default function Home() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(0,193,222,0.20),_transparent_22%),radial-gradient(circle_at_top_right,_rgba(5,13,158,0.22),_transparent_30%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1600px] space-y-6">
         <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/8 text-white shadow-2xl shadow-slate-950/40 backdrop-blur-xl">
-          <div className="grid gap-8 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8 lg:py-8">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
-                <Sparkles className="h-3.5 w-3.5" />
-                Inventario premium
-              </div>
-              <div className="mt-6 flex items-start gap-4">
+          <div className="px-6 py-6 lg:px-8 lg:py-8">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex items-center gap-4">
                 <div className="rounded-[1.75rem] bg-white/10 p-3">
                   <Image src="/logo.svg" alt="Logo" width={110} height={78} priority className="h-auto w-20" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-cyan-100">Gestión de material IT</p>
-                  <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Visual, profesional y lista para el trabajo diario</h1>
-                  <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base">
-                    Controla entradas, salidas, fotos, Nº de Serie y trazabilidad completa desde una interfaz más clara, más rápida y más cómoda para operaciones reales.
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Panel de desarrollo
+                  </div>
+                  <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Inventario IT con control operativo</h1>
+                  <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-200">
+                    Gestiona productos, Nº de Serie y movimientos desde una cabecera más compacta con acciones rápidas para desarrollo.
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.18em]">
+                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">DB {databaseMode === "remote" ? "remota" : "local"}</span>
+                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">{formatCompactNumber(products.length)} productos</span>
+                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">{formatCompactNumber(movements.length)} movimientos</span>
+                  </div>
                 </div>
               </div>
-              <div className="mt-8 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.18em]">
-                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">DB {databaseMode === "remote" ? "remota" : "local"}</span>
-                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">{formatCompactNumber(products.length)} productos</span>
-                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">{formatCompactNumber(movements.length)} movimientos</span>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => void refreshInventoryView()}
+                  disabled={loadingProducts || loadingMovements || loadingDetail || resettingDevData}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-50"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refrescar
+                </button>
+                {isDevelopmentEnvironment ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleDevelopmentReset()}
+                    disabled={resettingDevData || submitting}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20 disabled:opacity-50"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {resettingDevData ? "Reseteando..." : "Reset desarrollo"}
+                  </button>
+                ) : null}
+                <button type="button" onClick={logout} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100">
+                  Cerrar sesión
+                </button>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
                 <LayoutGrid className="h-5 w-5 text-cyan-200" />
                 <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Productos</p>
@@ -567,8 +639,8 @@ export default function Home() {
               <h2 className="mt-2 text-3xl font-bold text-slate-950">Inventario activo con trazabilidad</h2>
               <p className="mt-2 text-sm text-slate-500">Gestiona unidades directamente desde las tarjetas y revisa el stock en tiempo real.</p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button type="button" onClick={logout} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-blue">Cerrar sesión</button>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              Último producto activo: <span className="font-semibold text-slate-950">{selectedProduct?.name ?? "Sin selección"}</span>
             </div>
           </header>
           {message ? <div className="mx-6 mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 lg:mx-8">{message}</div> : null}

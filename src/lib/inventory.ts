@@ -448,3 +448,19 @@ export async function removeUnits(input: OutgoingMovementInput) {
     message: `${quantity} unidad${quantity === 1 ? "" : "es"} registrada${quantity === 1 ? "" : "s"} como enviada${quantity === 1 ? "" : "s"}.`,
   };
 }
+
+export async function resetDevelopmentInventory() {
+  await ensureDbReady();
+
+  await db.batch(
+    [
+      "DELETE FROM movements",
+      "DELETE FROM units",
+    ],
+    "write"
+  );
+
+  return {
+    message: "Se han reiniciado todas las unidades y todos los movimientos del entorno de desarrollo.",
+  };
+}
