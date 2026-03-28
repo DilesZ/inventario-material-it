@@ -138,7 +138,7 @@ export default function Home() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [mode, setMode] = useState<"in" | "out">("in");
+  const [mode, setMode] = useState<"in" | "out" | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [movementSearch, setMovementSearch] = useState("");
   const [movementFilter, setMovementFilter] = useState<"all" | "in" | "out">("all");
@@ -165,9 +165,7 @@ export default function Home() {
       ),
     [products]
   );
-  const selectedMovementCount = detail?.recentMovements.length ?? 0;
-  const quantityMatches =
-    mode === "in" ? Number(inForm.quantity || 0) === inSerialCount : Number(outForm.quantity || 0) === outSerialCount;
+  
   const filteredProducts = useMemo(() => {
     const searchTerm = productSearch.trim().toLowerCase();
     if (!searchTerm) {
@@ -178,36 +176,6 @@ export default function Home() {
       [product.name, product.sku, product.description, product.highlight].some((value) => value.toLowerCase().includes(searchTerm))
     );
   }, [products, productSearch]);
-  const filteredMovements = useMemo(() => {
-    const searchTerm = movementSearch.trim().toLowerCase();
-
-    return movements.filter((movement) => {
-      const matchesType = movementFilter === "all" || movement.type === movementFilter;
-      const matchesSearch =
-        !searchTerm ||
-        [
-          movement.productName,
-          movement.productSku,
-          movement.serialNumber,
-          movement.partnerName,
-          movement.unitStatus,
-        ].some((value) => value.toLowerCase().includes(searchTerm));
-
-      return matchesType && matchesSearch;
-    });
-  }, [movementFilter, movementSearch, movements]);
-  const filteredMovementStats = useMemo(
-    () =>
-      filteredMovements.reduce(
-        (summary, movement) => ({
-          entries: summary.entries + (movement.type === "in" ? 1 : 0),
-          exits: summary.exits + (movement.type === "out" ? 1 : 0),
-          available: summary.available + (movement.unitStatus === "available" ? 1 : 0),
-        }),
-        { entries: 0, exits: 0, available: 0 }
-      ),
-    [filteredMovements]
-  );
 
   const loadProducts = useCallback(async (preferredSlug?: string | null) => {
     setLoadingProducts(true);
@@ -242,6 +210,7 @@ export default function Home() {
       setLoadingProducts(false);
     }
   }, []);
+
   const loadDetail = useCallback(async (slug: string) => {
     setLoadingDetail(true);
     try {
@@ -351,11 +320,12 @@ export default function Home() {
     setActiveSlug(slug);
     if (nextMode) {
       setMode(nextMode);
+    } else {
+      setMode(null);
     }
   };
 
   const appendOutgoingSerial = (serialNumber: string) => {
-    setMode("out");
     setOutForm((current) => {
       const serials = parseSerials(current.serialsText);
       if (serials.includes(serialNumber)) {
@@ -415,6 +385,7 @@ export default function Home() {
       }
 
       setMessage(payload.message || "Movimiento guardado correctamente.");
+      setMode(null);
       const nextSlug = await loadProducts(activeSlug);
       await loadMovementTimeline();
       if (nextSlug) {
@@ -564,20 +535,17 @@ export default function Home() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue">Panel operativo</p>
               <h2 className="mt-2 text-3xl font-bold text-slate-950">Inventario activo con trazabilidad</h2>
-              <p className="mt-2 text-sm text-slate-500">Selecciona un producto, gestiona unidades y revisa todo el histórico con una lectura mucho más cómoda.</p>
+              <p className="mt-2 text-sm text-slate-500">Gestiona unidades directamente desde las tarjetas y revisa el stock en tiempo real.</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Último producto activo: <span className="font-semibold text-slate-950">{selectedProduct?.name ?? "Sin selección"}</span>
-              </div>
               <button type="button" onClick={logout} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-blue">Cerrar sesión</button>
             </div>
           </header>
-        {message ? <div className="mx-6 mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 lg:mx-8">{message}</div> : null}
-        {error ? <div className="mx-6 mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 lg:mx-8">{error}</div> : null}
+          {message ? <div className="mx-6 mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 lg:mx-8">{message}</div> : null}
+          {error ? <div className="mx-6 mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 lg:mx-8">{error}</div> : null}
 
-          <main className="grid gap-8 px-6 py-6 xl:grid-cols-[1.12fr_0.88fr] lg:px-8 lg:py-8">
-            <section className="space-y-6">
+          <main className="px-6 py-6 lg:px-8 lg:py-8">
+            <section className="space-y-8">
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -601,7 +569,7 @@ export default function Home() {
                     <Activity className="h-4 w-4 text-emerald-600" />
                   </div>
                   <p className="mt-3 text-3xl font-bold text-slate-950">{formatCompactNumber(movements.length)}</p>
-                  <p className="mt-2 text-sm text-slate-500">Movimientos visibles en el histórico global.</p>
+                  <p className="mt-2 text-sm text-slate-500">Movimientos totales registrados.</p>
                 </div>
               </div>
 
@@ -609,7 +577,7 @@ export default function Home() {
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-slate-950">Catálogo operativo</h3>
-                    <p className="text-sm text-slate-500">Tarjetas visuales con foto, estado y accesos directos para trabajar más rápido.</p>
+                    <p className="text-sm text-slate-500">Usa los botones de las tarjetas para añadir o restar unidades rápidamente.</p>
                   </div>
                   {loadingProducts ? <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-sm font-semibold text-brand-blue">Actualizando...</span> : null}
                 </div>
@@ -628,96 +596,151 @@ export default function Home() {
                     {filteredProducts.length} de {products.length} productos
                   </div>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {filteredProducts.map((product) => {
                     const isActive = product.slug === activeSlug;
+                    const isEditing = isActive && mode !== null;
                     return (
                       <article
                         key={product.id}
-                        onClick={() => activateProduct(product.slug)}
-                        className={`group cursor-pointer overflow-hidden rounded-[1.75rem] border transition-all duration-200 ${isActive ? "border-brand-blue bg-slate-950 text-white shadow-xl shadow-brand-blue/10" : "border-slate-200 bg-white text-slate-900 shadow-sm hover:-translate-y-1 hover:border-brand-blue/25 hover:shadow-xl hover:shadow-slate-200/70"}`}
+                        onClick={() => {
+                          if (!isEditing) {
+                            activateProduct(product.slug);
+                          }
+                        }}
+                        className={`group relative flex flex-col overflow-hidden rounded-[1.75rem] border transition-all duration-300 ${isActive ? "border-brand-blue ring-4 ring-brand-blue/5 shadow-xl shadow-brand-blue/5" : "border-slate-200 hover:border-brand-blue/30 hover:shadow-xl hover:shadow-slate-200/50"} bg-white`}
                       >
-                        <div className={`relative overflow-hidden ${isActive ? "bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_38%),linear-gradient(180deg,_rgba(15,23,42,0.96),_rgba(15,23,42,0.74))]" : "bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.10),_transparent_34%),linear-gradient(180deg,_#f8fafc,_#eef2ff)]"}`}>
-                          <div className={`absolute inset-0 bg-gradient-to-t ${isActive ? "from-slate-950/85 via-slate-950/10 to-transparent" : "from-slate-950/8 via-transparent to-transparent"}`} />
+                        <div className={`relative aspect-[16/10] overflow-hidden ${isActive ? "bg-slate-950/5" : "bg-slate-50"}`}>
                           <Image
                             src={product.imagePath}
                             alt={product.name}
-                            width={480}
-                            height={280}
-                            className="h-52 w-full object-contain p-4 transition duration-300 group-hover:scale-[1.03]"
+                            fill
+                            className={`object-contain p-6 transition duration-500 ${!isEditing && "group-hover:scale-110"}`}
                           />
-                          <div className="absolute left-4 top-4 flex items-center gap-2">
-                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${isActive ? "bg-cyan-300 text-slate-950" : "bg-white/90 text-brand-blue"}`}>{product.sku}</span>
-                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${isActive ? "bg-white/10 text-cyan-100" : "bg-slate-950/80 text-white"}`}>{product.highlight}</span>
+                          <div className="absolute left-3 top-3 flex items-center gap-1.5">
+                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${isActive ? "bg-brand-blue text-white shadow-sm" : "bg-white text-brand-blue shadow-sm"}`}>{product.sku}</span>
                           </div>
                         </div>
-                        <div className="p-5">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h4 className="text-xl font-semibold">{product.name}</h4>
-                              <p className={`mt-2 text-sm leading-6 ${isActive ? "text-slate-300" : "text-slate-500"}`}>{product.description}</p>
+
+                        <div className="flex flex-1 flex-col p-5">
+                          <div className="mb-4">
+                            <h4 className="text-lg font-bold text-slate-950">{product.name}</h4>
+                            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{product.description}</p>
+                          </div>
+
+                          <div className="mb-5 grid grid-cols-3 gap-2">
+                            <div className="rounded-xl bg-slate-50 p-2 text-center">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Disp.</p>
+                              <p className="text-lg font-bold text-slate-950">{product.availableUnits}</p>
                             </div>
-                            <div className={`rounded-2xl px-3 py-2 text-right ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
-                              <p className={`text-[11px] uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Mov.</p>
-                              <p className="mt-1 text-sm font-semibold">{formatDate(product.lastMovementAt)}</p>
+                            <div className="rounded-xl bg-slate-50 p-2 text-center">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Asign.</p>
+                              <p className="text-lg font-bold text-slate-950">{product.assignedUnits}</p>
+                            </div>
+                            <div className="rounded-xl bg-slate-50 p-2 text-center">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</p>
+                              <p className="text-lg font-bold text-slate-950">{product.totalUnits}</p>
                             </div>
                           </div>
-                          <div className="mt-5 grid grid-cols-3 gap-3">
-                            <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
-                              <p className={`text-xs uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Disp.</p>
-                              <p className="mt-2 text-3xl font-bold">{product.availableUnits}</p>
+
+                          {isEditing ? (
+                            <div className="mt-auto space-y-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 shadow-inner">
+                              <div className="flex items-center justify-between">
+                                <span className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${mode === "in" ? "text-emerald-600" : "text-amber-600"}`}>
+                                  {mode === "in" ? <PackagePlus className="h-3.5 w-3.5" /> : <PackageMinus className="h-3.5 w-3.5" />}
+                                  {mode === "in" ? "Nueva entrada" : "Nueva salida"}
+                                </span>
+                                <button onClick={(e) => { e.stopPropagation(); setMode(null); }} className="text-[10px] font-bold uppercase text-slate-400 hover:text-slate-600">Cancelar</button>
+                              </div>
+
+                              {mode === "in" ? (
+                                <div className="space-y-3">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Cant.</label>
+                                      <input type="number" min="1" value={inForm.quantity} onChange={(e) => setInForm(prev => ({ ...prev, quantity: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-blue/20" />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Fecha</label>
+                                      <input type="date" value={inForm.movementDate} onChange={(e) => setInForm(prev => ({ ...prev, movementDate: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-blue/20" />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Proveedor</label>
+                                    <input value={inForm.provider} onChange={(e) => setInForm(prev => ({ ...prev, provider: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-blue/20" placeholder="Nombre del proveedor" />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-center ml-1">
+                                      <label className="text-[10px] font-bold uppercase text-slate-400">Números de serie</label>
+                                      <span className="text-[10px] font-bold text-brand-blue">{inSerialCount} / {inForm.quantity}</span>
+                                    </div>
+                                    <textarea value={inForm.serialsText} onChange={(e) => setInForm(prev => ({ ...prev, serialsText: e.target.value }))} rows={3} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-blue/20" placeholder="Una serie por línea" />
+                                  </div>
+                                  <button onClick={(e) => { e.stopPropagation(); void submitMovement("in"); }} disabled={submitting} className="w-full rounded-xl bg-brand-blue py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-blue/20 hover:bg-brand-blue/90 disabled:opacity-50">Confirmar entrada</button>
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Cant.</label>
+                                      <input type="number" min="1" value={outForm.quantity} onChange={(e) => setOutForm(prev => ({ ...prev, quantity: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Fecha</label>
+                                      <input type="date" value={outForm.movementDate} onChange={(e) => setOutForm(prev => ({ ...prev, movementDate: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-slate-900/20" />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 ml-1">Destinatario</label>
+                                    <input value={outForm.recipient} onChange={(e) => setOutForm(prev => ({ ...prev, recipient: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="Persona o equipo" />
+                                  </div>
+                                  
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-center ml-1">
+                                      <label className="text-[10px] font-bold uppercase text-slate-400">Seleccionar series</label>
+                                      <span className="text-[10px] font-bold text-amber-600">{outSerialCount} / {outForm.quantity}</span>
+                                    </div>
+                                    <textarea value={outForm.serialsText} onChange={(e) => setOutForm(prev => ({ ...prev, serialsText: e.target.value }))} rows={2} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="Series seleccionadas" />
+                                    
+                                    {detail?.availableSerials.length ? (
+                                      <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto rounded-xl bg-white p-2 ring-1 ring-slate-200 mt-1">
+                                        {detail.availableSerials.map(unit => (
+                                          <button
+                                            key={unit.serialNumber}
+                                            onClick={(e) => { e.stopPropagation(); appendOutgoingSerial(unit.serialNumber); }}
+                                            className={`rounded-lg px-2 py-1 text-[10px] font-bold transition ${outForm.serialsText.includes(unit.serialNumber) ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                                          >
+                                            {unit.serialNumber}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-[10px] text-slate-400 text-center py-2">No hay series disponibles</p>
+                                    )}
+                                  </div>
+
+                                  <button onClick={(e) => { e.stopPropagation(); void submitMovement("out"); }} disabled={submitting} className="w-full rounded-xl bg-slate-950 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-950/20 hover:bg-slate-800 disabled:opacity-50">Confirmar salida</button>
+                                </div>
+                              )}
                             </div>
-                            <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
-                              <p className={`text-xs uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Asign.</p>
-                              <p className="mt-2 text-3xl font-bold">{product.assignedUnits}</p>
+                          ) : (
+                            <div className="mt-auto grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); activateProduct(product.slug, "in"); }}
+                                className="flex items-center justify-center gap-2 rounded-xl bg-brand-blue/10 py-2.5 text-xs font-bold text-brand-blue transition hover:bg-brand-blue hover:text-white shadow-sm"
+                              >
+                                <PackagePlus className="h-3.5 w-3.5" />
+                                Añadir
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); activateProduct(product.slug, "out"); }}
+                                className="flex items-center justify-center gap-2 rounded-xl bg-slate-950/5 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-950 hover:text-white shadow-sm"
+                              >
+                                <PackageMinus className="h-3.5 w-3.5" />
+                                Restar
+                              </button>
                             </div>
-                            <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
-                              <p className={`text-xs uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Total</p>
-                              <p className="mt-2 text-3xl font-bold">{product.totalUnits}</p>
-                            </div>
-                          </div>
-                          <div className={`mt-4 rounded-[1.25rem] px-4 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
-                            <div className="flex items-center justify-between gap-3">
-                              <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-500"}`}>Estado de stock</p>
-                              <span className={`text-xs font-semibold ${isActive ? "text-cyan-100" : "text-slate-600"}`}>
-                                {getAvailabilityPercentage(product.availableUnits, product.totalUnits)}% disponible
-                              </span>
-                            </div>
-                            <div className={`mt-3 h-2 overflow-hidden rounded-full ${isActive ? "bg-white/10" : "bg-slate-200"}`}>
-                              <div
-                                className={`h-full rounded-full ${isActive ? "bg-cyan-300" : "bg-brand-blue"}`}
-                                style={{ width: `${getAvailabilityPercentage(product.availableUnits, product.totalUnits)}%` }}
-                              />
-                            </div>
-                            <div className={`mt-3 flex items-center justify-between text-xs ${isActive ? "text-slate-300" : "text-slate-500"}`}>
-                              <span>{getAssignmentPercentage(product.assignedUnits, product.totalUnits)}% asignado</span>
-                              <span>{product.totalUnits ? "Cobertura visible" : "Sin stock"}</span>
-                            </div>
-                          </div>
-                          <div className="mt-5 grid grid-cols-2 gap-3">
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                activateProduct(product.slug, "in");
-                              }}
-                              className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${isActive ? "bg-cyan-300 text-slate-950" : "bg-brand-blue text-white hover:bg-brand-blue/90"}`}
-                            >
-                              <PackagePlus className="h-4 w-4" />
-                              Añadir
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                activateProduct(product.slug, "out");
-                              }}
-                              className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${isActive ? "bg-white text-slate-950" : "bg-slate-950 text-white hover:bg-slate-800"}`}
-                            >
-                              <PackageMinus className="h-4 w-4" />
-                              Restar
-                            </button>
-                          </div>
+                          )}
                         </div>
                       </article>
                     );
@@ -731,395 +754,7 @@ export default function Home() {
                 ) : null}
               </div>
             </section>
-
-            <aside className="xl:sticky xl:top-6 xl:h-fit">
-              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 shadow-inner shadow-white">
-                {selectedProduct ? (
-                  <>
-                    <div className="relative overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_40%),linear-gradient(180deg,_#eff6ff,_#dbeafe)] shadow-sm">
-                      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/55 to-transparent" />
-                      <Image
-                        src={selectedProduct.imagePath}
-                        alt={selectedProduct.name}
-                        width={900}
-                        height={420}
-                        className="h-64 w-full object-contain p-5"
-                      />
-                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
-                        <div>
-                          <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-blue">{selectedProduct.sku}</span>
-                          <h3 className="mt-3 text-2xl font-bold text-white">{selectedProduct.name}</h3>
-                        </div>
-                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">{selectedProduct.highlight}</span>
-                      </div>
-                    </div>
-                    <p className="mt-5 text-sm leading-6 text-slate-500">{selectedProduct.description}</p>
-
-                    <div className="mt-5 grid grid-cols-3 gap-3">
-                      <div className="rounded-[1.35rem] bg-white px-4 py-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Disponibles</p>
-                        <p className="mt-2 text-3xl font-bold text-slate-950">{detail?.availableSerials.length ?? selectedProduct.availableUnits}</p>
-                      </div>
-                      <div className="rounded-[1.35rem] bg-white px-4 py-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Asignadas</p>
-                        <p className="mt-2 text-3xl font-bold text-slate-950">{detail?.assignedSerials.length ?? selectedProduct.assignedUnits}</p>
-                      </div>
-                      <div className="rounded-[1.35rem] bg-white px-4 py-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Movimientos</p>
-                        <p className="mt-2 text-3xl font-bold text-slate-950">{selectedMovementCount}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Balance del producto</p>
-                          <p className="mt-2 text-sm text-slate-600">Lectura rápida de disponibilidad y asignación para tomar decisiones al momento.</p>
-                        </div>
-                        <div className="rounded-full bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-                          {getAvailabilityPercentage(detail?.availableSerials.length ?? selectedProduct.availableUnits, detail?.totalUnits ?? selectedProduct.totalUnits)}% disponible
-                        </div>
-                      </div>
-                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
-                        <div className="h-full rounded-full bg-gradient-to-r from-brand-blue to-cyan-300" style={{ width: `${getAvailabilityPercentage(detail?.availableSerials.length ?? selectedProduct.availableUnits, detail?.totalUnits ?? selectedProduct.totalUnits)}%` }} />
-                      </div>
-                      <div className="mt-3 grid gap-3 text-xs text-slate-500 sm:grid-cols-3">
-                        <p>Disponibles: <span className="font-semibold text-slate-900">{detail?.availableSerials.length ?? selectedProduct.availableUnits}</span></p>
-                        <p>Asignadas: <span className="font-semibold text-slate-900">{detail?.assignedSerials.length ?? selectedProduct.assignedUnits}</span></p>
-                        <p>Total: <span className="font-semibold text-slate-900">{detail?.totalUnits ?? selectedProduct.totalUnits}</span></p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={() => setMode("in")}
-                        className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-left transition hover:border-emerald-300 hover:bg-emerald-100/70"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-xl bg-emerald-500 p-2 text-white">
-                            <PackagePlus className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-950">Alta rápida</p>
-                            <p className="mt-1 text-xs text-slate-500">Añade stock nuevo con proveedor y series.</p>
-                          </div>
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMode("out")}
-                        className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-4 text-left transition hover:border-amber-300 hover:bg-amber-100/70"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-xl bg-amber-500 p-2 text-white">
-                            <PackageMinus className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-950">Entrega rápida</p>
-                            <p className="mt-1 text-xs text-slate-500">Prepara salidas seleccionando series disponibles.</p>
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-
-                    <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-white p-1.5 shadow-sm">
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <button type="button" onClick={() => setMode("in")} className={`inline-flex items-center justify-center gap-2 rounded-[1.1rem] px-4 py-3 text-sm font-semibold transition ${mode === "in" ? "bg-brand-blue text-white shadow-md shadow-brand-blue/20" : "text-slate-600"}`}>
-                          <ArrowDownLeft className="h-4 w-4" />
-                          Añadir unidades
-                        </button>
-                        <button type="button" onClick={() => setMode("out")} className={`inline-flex items-center justify-center gap-2 rounded-[1.1rem] px-4 py-3 text-sm font-semibold transition ${mode === "out" ? "bg-slate-950 text-white shadow-md shadow-slate-950/20" : "text-slate-600"}`}>
-                          <ArrowUpRight className="h-4 w-4" />
-                          Restar unidades
-                        </button>
-                      </div>
-                    </div>
-
-                    {mode === "in" ? (
-                      <div className="mt-5 space-y-4 rounded-[1.5rem] bg-white p-5 shadow-sm">
-                        <div className="flex items-center justify-between rounded-[1.25rem] bg-brand-blue/5 px-4 py-3">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-blue">Entrada de stock</p>
-                            <p className="mt-1 text-sm text-slate-500">Alta cómoda de unidades nuevas con todos los datos necesarios.</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Series</p>
-                            <p className="mt-1 text-2xl font-bold text-brand-blue">{inSerialCount}</p>
-                          </div>
-                        </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700">Cantidad</label>
-                            <input type="number" min="1" value={inForm.quantity} onChange={(event) => setInForm((current) => ({ ...current, quantity: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Cantidad" />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700">Fecha</label>
-                            <input type="date" value={inForm.movementDate} onChange={(event) => setInForm((current) => ({ ...current, movementDate: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700">Proveedor</label>
-                          <input value={inForm.provider} onChange={(event) => setInForm((current) => ({ ...current, provider: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Proveedor o canal de compra" />
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-sm font-semibold text-slate-700">Números de serie</label>
-                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${quantityMatches ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                              {quantityMatches ? "Cantidad y series alineadas" : "Revisa cantidad y series"}
-                            </span>
-                          </div>
-                          <textarea value={inForm.serialsText} onChange={(event) => setInForm((current) => ({ ...current, serialsText: event.target.value }))} rows={5} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Una serie por línea o separadas por coma" />
-                        </div>
-                        <button type="button" onClick={() => void submitMovement("in")} disabled={submitting} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/20 transition hover:bg-brand-blue/90 disabled:opacity-60">
-                          <PackagePlus className="h-4 w-4" />
-                          Guardar entrada
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-5 space-y-4 rounded-[1.5rem] bg-white p-5 shadow-sm">
-                        <div className="flex items-center justify-between rounded-[1.25rem] bg-slate-950/5 px-4 py-3">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-950">Salida de stock</p>
-                            <p className="mt-1 text-sm text-slate-500">Entrega rápida de unidades disponibles con control por serie.</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Series</p>
-                            <p className="mt-1 text-2xl font-bold text-slate-950">{outSerialCount}</p>
-                          </div>
-                        </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700">Cantidad</label>
-                            <input type="number" min="1" value={outForm.quantity} onChange={(event) => setOutForm((current) => ({ ...current, quantity: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Cantidad" />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-sm font-semibold text-slate-700">Fecha</label>
-                            <input type="date" value={outForm.movementDate} onChange={(event) => setOutForm((current) => ({ ...current, movementDate: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700">Destinatario</label>
-                          <input value={outForm.recipient} onChange={(event) => setOutForm((current) => ({ ...current, recipient: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Persona, equipo o departamento" />
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-sm font-semibold text-slate-700">Series para salida</label>
-                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${quantityMatches ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                              {quantityMatches ? "Cantidad y series alineadas" : "Revisa cantidad y series"}
-                            </span>
-                          </div>
-                          <textarea value={outForm.serialsText} onChange={(event) => setOutForm((current) => ({ ...current, serialsText: event.target.value }))} rows={5} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Selecciona series o pégalas aquí" />
-                        </div>
-                        <button type="button" onClick={() => void submitMovement("out")} disabled={submitting} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-950/20 transition hover:bg-slate-800 disabled:opacity-60">
-                          <PackageMinus className="h-4 w-4" />
-                          Guardar salida
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="mt-6 grid gap-4 xl:grid-cols-2">
-                      <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
-                        <div className="mb-4 flex items-center justify-between gap-3">
-                          <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Series disponibles</h4>
-                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{detail?.availableSerials.length ?? 0}</span>
-                        </div>
-                        {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
-                        {!loadingDetail && detail?.availableSerials.length ? (
-                          <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
-                            {detail.availableSerials.map((unit) => (
-                              <button
-                                key={unit.serialNumber}
-                                type="button"
-                                onClick={() => appendOutgoingSerial(unit.serialNumber)}
-                                className="w-full rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-100"
-                              >
-                                <div className="flex items-center justify-between gap-3">
-                                  <p className="font-semibold text-slate-900">{unit.serialNumber}</p>
-                                  <span className="rounded-full bg-slate-950 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">Preparar salida</span>
-                                </div>
-                                <p className="mt-2 text-xs text-slate-500">Proveedor: {unit.provider || "Sin dato"}</p>
-                                <p className="mt-1 text-xs text-slate-500">Entrada: {formatDate(unit.receivedDate)}</p>
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                        {!loadingDetail && !detail?.availableSerials.length ? <p className="text-sm text-slate-500">No hay unidades disponibles.</p> : null}
-                      </div>
-
-                      <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
-                        <div className="mb-4 flex items-center justify-between gap-3">
-                          <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Series asignadas</h4>
-                          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">{detail?.assignedSerials.length ?? 0}</span>
-                        </div>
-                        {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
-                        {!loadingDetail && detail?.assignedSerials.length ? (
-                          <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
-                            {detail.assignedSerials.map((unit) => (
-                              <div key={unit.serialNumber} className="rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3">
-                                <p className="font-semibold text-slate-900">{unit.serialNumber}</p>
-                                <p className="mt-2 text-xs text-slate-500">Destinatario: {unit.recipient || "Sin dato"}</p>
-                                <p className="mt-1 text-xs text-slate-500">Envío: {formatDate(unit.shippedDate)}</p>
-                              </div>
-                            ))}
-                          </div>
-                        ) : null}
-                        {!loadingDetail && !detail?.assignedSerials.length ? <p className="text-sm text-slate-500">No hay unidades asignadas.</p> : null}
-                      </div>
-                    </div>
-
-                    <div className="mt-6 rounded-[1.5rem] bg-white p-5 shadow-sm">
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Últimos movimientos del producto</h4>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">{selectedMovementCount} registros</span>
-                      </div>
-                      {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
-                      {!loadingDetail && detail?.recentMovements.length ? (
-                        <div className="space-y-3">
-                          {detail.recentMovements.map((movement) => (
-                            <div key={movement.id} className="rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-4">
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="text-sm font-semibold text-slate-900">{movement.type === "in" ? "Entrada" : "Salida"} · {movement.serialNumber}</p>
-                                <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.unitStatus === "available" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                                  {movement.unitStatus === "available" ? "Disponible" : "Asignada"}
-                                </span>
-                              </div>
-                              <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
-                                <p><span className="font-semibold text-slate-700">Contacto:</span> {movement.partnerName}</p>
-                                <p><span className="font-semibold text-slate-700">Fecha:</span> {formatDate(movement.movementDate)}</p>
-                                <p><span className="font-semibold text-slate-700">Registro:</span> {formatDateTime(movement.createdAt)}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                      {!loadingDetail && !detail?.recentMovements.length ? <p className="text-sm text-slate-500">Aún no hay movimientos para este producto.</p> : null}
-                    </div>
-                  </>
-                ) : (
-                  <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-8 text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-500">
-                      <LayoutGrid className="h-7 w-7" />
-                    </div>
-                    <h3 className="mt-5 text-lg font-semibold text-slate-950">Selecciona un producto para empezar</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                      Verás su imagen, estado, accesos rápidos, formularios de entrada y salida, series disponibles y últimos movimientos.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </aside>
           </main>
-
-          <section className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white lg:px-8 lg:py-8">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Registro horizontal</p>
-              <h2 className="mt-2 text-2xl font-bold">Historial completo de movimientos</h2>
-              <p className="mt-2 max-w-3xl text-sm text-slate-300">Cada operación queda reflejada con una lectura más clara, jerarquía visual reforzada y una tabla horizontal más cómoda para trabajo intensivo.</p>
-            </div>
-            <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_auto_auto_auto]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={movementSearch}
-                  onChange={(event) => setMovementSearch(event.target.value)}
-                  placeholder="Buscar por producto, SKU, serie, contacto o estado"
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-cyan-300/60 focus:ring-4 focus:ring-cyan-300/10"
-                />
-              </div>
-              <div className="inline-flex rounded-2xl border border-white/10 bg-white/5 p-1">
-                {(["all", "in", "out"] as const).map((filterValue) => (
-                  <button
-                    key={filterValue}
-                    type="button"
-                    onClick={() => setMovementFilter(filterValue)}
-                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${movementFilter === filterValue ? "bg-white text-slate-950" : "text-slate-300 hover:text-white"}`}
-                  >
-                    {filterValue === "all" ? "Todo" : filterValue === "in" ? "Entradas" : "Salidas"}
-                  </button>
-                ))}
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                {loadingMovements ? "Actualizando historial..." : `${filteredMovements.length} movimientos visibles`}
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                Desplaza horizontalmente para ver todos los campos
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Entradas visibles</p>
-                <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.entries}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Salidas visibles</p>
-                <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.exits}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Con estado disponible</p>
-                <p className="mt-2 text-2xl font-bold text-white">{filteredMovementStats.available}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900/80 shadow-2xl shadow-slate-950/25">
-            {loadingMovements ? <div className="px-5 py-6 text-sm text-slate-300">Cargando historial de movimientos...</div> : null}
-            {!loadingMovements && filteredMovements.length ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-[1260px] text-left text-sm">
-                    <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-[0.18em] text-slate-300">
-                    <tr>
-                      <th className="sticky left-0 z-10 bg-slate-900 px-4 py-4 font-semibold">Fecha mov.</th>
-                      <th className="px-4 py-4 font-semibold">Registro</th>
-                      <th className="px-4 py-4 font-semibold">Producto</th>
-                      <th className="px-4 py-4 font-semibold">SKU</th>
-                      <th className="px-4 py-4 font-semibold">Tipo</th>
-                      <th className="px-4 py-4 font-semibold">Serie</th>
-                      <th className="px-4 py-4 font-semibold">Proveedor / destinatario</th>
-                      <th className="px-4 py-4 font-semibold">Estado actual</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMovements.map((movement) => (
-                        <tr key={movement.id} className="border-t border-white/8 text-slate-100 odd:bg-white/[0.02] even:bg-transparent hover:bg-white/[0.05]">
-                          <td className="sticky left-0 z-[1] bg-slate-900 px-4 py-4 whitespace-nowrap font-semibold">{formatDate(movement.movementDate)}</td>
-                          <td className="px-4 py-4 whitespace-nowrap text-slate-300">{formatDateTime(movement.createdAt)}</td>
-                        <td className="px-4 py-4">
-                          <button
-                            type="button"
-                            onClick={() => activateProduct(movement.productSlug, movement.type)}
-                              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left transition hover:bg-white/10"
-                          >
-                              <span className="block font-semibold text-white">{movement.productName}</span>
-                              <span className="mt-1 block text-xs text-slate-300">Abrir producto</span>
-                          </button>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-slate-300">{movement.productSku}</td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.type === "in" ? "bg-cyan-300 text-slate-950" : "bg-white text-slate-950"}`}>
-                            {movement.type === "in" ? "Entrada" : "Salida"}
-                          </span>
-                        </td>
-                          <td className="px-4 py-4 whitespace-nowrap font-semibold text-white">{movement.serialNumber}</td>
-                          <td className="px-4 py-4 text-slate-200">{movement.partnerName}</td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.unitStatus === "available" ? "bg-emerald-400/20 text-emerald-200" : "bg-amber-400/20 text-amber-200"}`}>
-                            {movement.unitStatus === "available" ? "Disponible" : "Asignada"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  </table>
-                </div>
-            ) : null}
-            {!loadingMovements && !filteredMovements.length ? (
-              <div className="px-5 py-10 text-center">
-                <p className="text-base font-semibold text-white">No hay movimientos para los filtros actuales</p>
-                <p className="mt-2 text-sm text-slate-300">Ajusta la búsqueda o cambia el filtro para recuperar registros del historial.</p>
-              </div>
-            ) : null}
-          </div>
-          </section>
         </div>
       </div>
     </div>
