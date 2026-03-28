@@ -452,7 +452,7 @@ export default function Home() {
               </div>
             </div>
             <p className="mt-8 max-w-2xl text-base leading-7 text-slate-200">
-              Unifica stock, movimientos, series y trazabilidad en una interfaz más clara, rápida y cómoda para el equipo de sistemas.
+              Unifica stock, movimientos, Nº de Serie y trazabilidad en una interfaz más clara, rápida y cómoda para el equipo de sistemas.
             </p>
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
               <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-4">
@@ -525,7 +525,7 @@ export default function Home() {
                   <p className="text-sm font-medium text-cyan-100">Gestión de material IT</p>
                   <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Visual, profesional y lista para el trabajo diario</h1>
                   <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base">
-                    Controla entradas, salidas, fotos, series y trazabilidad completa desde una interfaz más clara, más rápida y más cómoda para operaciones reales.
+                    Controla entradas, salidas, fotos, Nº de Serie y trazabilidad completa desde una interfaz más clara, más rápida y más cómoda para operaciones reales.
                   </p>
                 </div>
               </div>
