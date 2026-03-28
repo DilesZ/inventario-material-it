@@ -701,10 +701,10 @@ export default function Home() {
                                   </div>
                                   <div className="space-y-1">
                                     <div className="flex justify-between items-center ml-1">
-                                      <label className="text-[10px] font-bold uppercase text-slate-400">Números de serie</label>
+                                      <label className="text-[10px] font-bold uppercase text-slate-400">Nº de Serie</label>
                                       <span className="text-[10px] font-bold text-brand-blue">{inSerialCount} / {inForm.quantity}</span>
                                     </div>
-                                    <textarea value={inForm.serialsText} onChange={(e) => setInForm(prev => ({ ...prev, serialsText: e.target.value }))} rows={3} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-blue/20" placeholder="Una serie por línea" />
+                                    <textarea value={inForm.serialsText} onChange={(e) => setInForm(prev => ({ ...prev, serialsText: e.target.value }))} rows={3} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-blue/20" placeholder="Un Nº de Serie por línea" />
                                   </div>
                                   <button onClick={(e) => { e.stopPropagation(); void submitMovement("in"); }} disabled={submitting} className="w-full rounded-xl bg-brand-blue py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-blue/20 hover:bg-brand-blue/90 disabled:opacity-50">Confirmar entrada</button>
                                 </div>
@@ -727,10 +727,10 @@ export default function Home() {
                                   
                                   <div className="space-y-1">
                                     <div className="flex justify-between items-center ml-1">
-                                      <label className="text-[10px] font-bold uppercase text-slate-400">Seleccionar series</label>
+                                      <label className="text-[10px] font-bold uppercase text-slate-400">Seleccionar Nº de Serie</label>
                                       <span className="text-[10px] font-bold text-amber-600">{outSerialCount} / {outForm.quantity}</span>
                                     </div>
-                                    <textarea value={outForm.serialsText} onChange={(e) => setOutForm(prev => ({ ...prev, serialsText: e.target.value }))} rows={2} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="Series seleccionadas" />
+                                    <textarea value={outForm.serialsText} onChange={(e) => setOutForm(prev => ({ ...prev, serialsText: e.target.value }))} rows={2} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="Nº de Serie seleccionado" />
                                     
                                     {detail?.availableSerials.length ? (
                                       <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto rounded-xl bg-white p-2 ring-1 ring-slate-200 mt-1">
@@ -745,7 +745,7 @@ export default function Home() {
                                         ))}
                                       </div>
                                     ) : (
-                                      <p className="text-[10px] text-slate-400 text-center py-2">No hay series disponibles</p>
+                                      <p className="text-[10px] text-slate-400 text-center py-2">No hay Nº de Serie disponibles</p>
                                     )}
                                   </div>
 
@@ -805,7 +805,7 @@ export default function Home() {
                       <input
                         value={movementSearch}
                         onChange={(event) => setMovementSearch(event.target.value)}
-                        placeholder="Buscar por producto, SKU, serie, contacto o estado"
+                        placeholder="Buscar por producto, SKU, Nº de Serie, contacto o estado"
                         className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/40 focus:ring-4 focus:ring-cyan-300/10"
                       />
                     </div>
@@ -859,7 +859,7 @@ export default function Home() {
                             <th className="px-4 py-4 font-semibold">Producto</th>
                             <th className="px-4 py-4 font-semibold">SKU</th>
                             <th className="px-4 py-4 font-semibold">Tipo</th>
-                            <th className="px-4 py-4 font-semibold">Serie</th>
+                            <th className="px-4 py-4 font-semibold">Nº de Serie</th>
                             <th className="px-4 py-4 font-semibold">Proveedor / destinatario</th>
                             <th className="px-4 py-4 font-semibold">Estado actual</th>
                           </tr>
