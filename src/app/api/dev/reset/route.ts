@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { hasValidSession } from "@/lib/auth";
-import { resetDevelopmentInventory } from "@/lib/inventory";
+import { clearDevelopmentMovements, clearDevelopmentUnits } from "@/lib/inventory";
 
-export async function POST() {
+export async function POST(request: Request) {
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "Esta acción solo está disponible en desarrollo." }, { status: 403 });
   }
@@ -12,8 +12,20 @@ export async function POST() {
   }
 
   try {
-    const result = await resetDevelopmentInventory();
-    return NextResponse.json(result);
+    const body = (await request.json().catch(() => ({}))) as { target?: unknown };
+    const target = typeof body?.target === "string" ? body.target : "";
+
+    if (target === "units") {
+      const result = await clearDevelopmentUnits();
+      return NextResponse.json(result);
+    }
+
+    if (target === "movements") {
+      const result = await clearDevelopmentMovements();
+      return NextResponse.json(result);
+    }
+
+    return NextResponse.json({ error: "Acción de desarrollo no válida." }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo reiniciar el inventario de desarrollo.";
     return NextResponse.json({ error: message }, { status: 500 });

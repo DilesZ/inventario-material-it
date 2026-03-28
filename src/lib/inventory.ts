@@ -449,18 +449,22 @@ export async function removeUnits(input: OutgoingMovementInput) {
   };
 }
 
-export async function resetDevelopmentInventory() {
+export async function clearDevelopmentUnits() {
   await ensureDbReady();
 
-  await db.batch(
-    [
-      "DELETE FROM movements",
-      "DELETE FROM units",
-    ],
-    "write"
-  );
+  await db.execute("DELETE FROM units");
 
   return {
-    message: "Se han reiniciado todas las unidades y todos los movimientos del entorno de desarrollo.",
+    message: "Se han eliminado todas las unidades del entorno de desarrollo.",
+  };
+}
+
+export async function clearDevelopmentMovements() {
+  await ensureDbReady();
+
+  await db.execute("DELETE FROM movements");
+
+  return {
+    message: "Se han eliminado todos los movimientos del entorno de desarrollo.",
   };
 }

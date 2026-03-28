@@ -140,7 +140,7 @@ export default function Home() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [resettingDevData, setResettingDevData] = useState(false);
+  const [runningDevelopmentAction, setRunningDevelopmentAction] = useState<"units" | "movements" | null>(null);
   const [mode, setMode] = useState<"in" | "out" | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [movementSearch, setMovementSearch] = useState("");
@@ -438,39 +438,45 @@ export default function Home() {
     }
   };
 
-  const handleDevelopmentReset = async () => {
+  const handleDevelopmentAction = async (target: "units" | "movements") => {
     if (!isDevelopmentEnvironment) {
       return;
     }
 
     const shouldReset = window.confirm(
-      "Esto pondrá todas las unidades a cero y borrará todos los movimientos del entorno de desarrollo. ¿Quieres continuar?"
+      target === "units"
+        ? "Esto eliminará todas las unidades del entorno de desarrollo. ¿Quieres continuar?"
+        : "Esto eliminará todos los movimientos del entorno de desarrollo. ¿Quieres continuar?"
     );
 
     if (!shouldReset) {
       return;
     }
 
-    setResettingDevData(true);
+    setRunningDevelopmentAction(target);
     setMessage("");
     setError("");
 
     try {
-      const response = await fetch("/api/dev/reset", { method: "POST" });
+      const response = await fetch("/api/dev/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target }),
+      });
       const payload = (await response.json()) as ApiResponse;
       if (!response.ok) {
-        throw new Error(payload.error || "No se pudo reiniciar el entorno de desarrollo.");
+        throw new Error(payload.error || "No se pudo ejecutar la acción de desarrollo.");
       }
 
       setMode(null);
       setInForm({ quantity: "1", provider: "", movementDate: today(), serialsText: "" });
       setOutForm({ quantity: "1", recipient: "", movementDate: today(), serialsText: "" });
-      setMessage(payload.message || "Entorno de desarrollo reiniciado.");
+      setMessage(payload.message || "Acción de desarrollo completada.");
       await refreshInventoryView();
-    } catch (resetError) {
-      setError(resetError instanceof Error ? resetError.message : "No se pudo reiniciar el entorno de desarrollo.");
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : "No se pudo ejecutar la acción de desarrollo.");
     } finally {
-      setResettingDevData(false);
+      setRunningDevelopmentAction(null);
     }
   };
 
@@ -584,22 +590,33 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => void refreshInventoryView()}
-                  disabled={loadingProducts || loadingMovements || loadingDetail || resettingDevData}
+                  disabled={loadingProducts || loadingMovements || loadingDetail || runningDevelopmentAction !== null}
                   className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-50"
                 >
                   <RefreshCw className="h-4 w-4" />
                   Refrescar
                 </button>
                 {isDevelopmentEnvironment ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleDevelopmentReset()}
-                    disabled={resettingDevData || submitting}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20 disabled:opacity-50"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {resettingDevData ? "Reseteando..." : "Reset desarrollo"}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void handleDevelopmentAction("units")}
+                      disabled={runningDevelopmentAction !== null || submitting}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20 disabled:opacity-50"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {runningDevelopmentAction === "units" ? "Borrando unidades..." : "Borrar unidades"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDevelopmentAction("movements")}
+                      disabled={runningDevelopmentAction !== null || submitting}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20 disabled:opacity-50"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {runningDevelopmentAction === "movements" ? "Borrando movimientos..." : "Borrar movimientos"}
+                    </button>
+                  </>
                 ) : null}
                 <button type="button" onClick={logout} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100">
                   Cerrar sesión
