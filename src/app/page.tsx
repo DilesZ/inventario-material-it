@@ -669,7 +669,7 @@ export default function Home() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Nombre del producto</label>
-                    <input required value={newProductForm.name} onChange={(e) => setNewProductForm(prev => ({ ...prev, name: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-cyan-500/10" placeholder="Ej: Monitor Dell 27\"" />
+                    <input required value={newProductForm.name} onChange={(e) => setNewProductForm(prev => ({ ...prev, name: e.target.value }))} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-cyan-500/10" placeholder='Ej: Monitor Dell 27"' />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">SKU / Referencia</label>
