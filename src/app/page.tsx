@@ -1,6 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import {
+  Activity,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Boxes,
+  Clock3,
+  LayoutGrid,
+  PackageCheck,
+  PackageMinus,
+  PackagePlus,
+  ScanSearch,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 type ProductSummary = {
@@ -100,6 +114,7 @@ const formatDateTime = (value: string | null) => {
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
+const formatCompactNumber = (value: number) => new Intl.NumberFormat("es-ES").format(value);
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -128,6 +143,22 @@ export default function Home() {
 
   const inSerialCount = useMemo(() => parseSerials(inForm.serialsText).length, [inForm.serialsText]);
   const outSerialCount = useMemo(() => parseSerials(outForm.serialsText).length, [outForm.serialsText]);
+  const dashboardStats = useMemo(
+    () =>
+      products.reduce(
+        (summary, product) => ({
+          totalProducts: summary.totalProducts + 1,
+          availableUnits: summary.availableUnits + product.availableUnits,
+          assignedUnits: summary.assignedUnits + product.assignedUnits,
+          totalUnits: summary.totalUnits + product.totalUnits,
+        }),
+        { totalProducts: 0, availableUnits: 0, assignedUnits: 0, totalUnits: 0 }
+      ),
+    [products]
+  );
+  const selectedMovementCount = detail?.recentMovements.length ?? 0;
+  const quantityMatches =
+    mode === "in" ? Number(inForm.quantity || 0) === inSerialCount : Number(outForm.quantity || 0) === outSerialCount;
 
   const loadProducts = useCallback(async (preferredSlug?: string | null) => {
     setLoadingProducts(true);
@@ -353,290 +384,507 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
-        <div className="w-full max-w-md rounded-[2rem] border border-slate-100 bg-white p-8 shadow-2xl shadow-slate-200/80">
-          <div className="mb-8 text-center">
-            <div className="mb-4 flex justify-center">
-              <Image src="/logo.svg" alt="Logo" width={180} height={100} priority className="h-auto w-44" />
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(0,193,222,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(5,13,158,0.26),_transparent_30%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)] px-4 py-10">
+        <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/8 p-8 text-white shadow-2xl shadow-slate-950/40 backdrop-blur-xl lg:p-10">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-300 via-brand-blue to-cyan-300" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              <Sparkles className="h-3.5 w-3.5" />
+              Plataforma interna IT
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Acceso restringido</h1>
-            <p className="mt-2 text-sm text-slate-500">Introduce tus credenciales para continuar</p>
+            <div className="mt-8 flex items-center gap-4">
+              <div className="rounded-3xl bg-white/10 p-4">
+                <Image src="/logo.svg" alt="Logo" width={112} height={84} priority className="h-auto w-20" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-cyan-100">Gestión premium de inventario</p>
+                <h1 className="mt-2 text-4xl font-bold tracking-tight">Material IT listo para operar</h1>
+              </div>
+            </div>
+            <p className="mt-8 max-w-2xl text-base leading-7 text-slate-200">
+              Unifica stock, movimientos, series y trazabilidad en una interfaz más clara, rápida y cómoda para el equipo de sistemas.
+            </p>
+            <div className="mt-10 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-4">
+                <ShieldCheck className="h-5 w-5 text-cyan-200" />
+                <p className="mt-4 text-sm font-semibold">Acceso seguro</p>
+                <p className="mt-2 text-sm text-slate-300">Sesión privada para operaciones internas.</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-4">
+                <PackageCheck className="h-5 w-5 text-cyan-200" />
+                <p className="mt-4 text-sm font-semibold">Stock visible</p>
+                <p className="mt-2 text-sm text-slate-300">Disponibles, asignadas y totales en un vistazo.</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-4">
+                <Clock3 className="h-5 w-5 text-cyan-200" />
+                <p className="mt-4 text-sm font-semibold">Trazabilidad total</p>
+                <p className="mt-2 text-sm text-slate-300">Cada movimiento queda registrado al instante.</p>
+              </div>
+            </div>
           </div>
-          <form onSubmit={submitLogin} className="space-y-5">
-            <input value={loginUser} onChange={(event) => setLoginUser(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Usuario" required />
-            <input type="password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Contraseña" required />
-            {loginError ? <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600">{loginError}</div> : null}
-            <button type="submit" disabled={submitting} className="w-full rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/20 disabled:opacity-60">Iniciar sesión</button>
-          </form>
-          <p className="mt-8 text-center text-xs text-slate-400">Dept. Sistemas 2026</p>
+
+          <div className="w-full rounded-[2rem] border border-slate-200/70 bg-white/95 p-8 shadow-2xl shadow-slate-950/15 backdrop-blur lg:p-10">
+            <div className="mb-8">
+              <div className="inline-flex items-center gap-2 rounded-full bg-brand-blue/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-brand-blue">
+                <ScanSearch className="h-3.5 w-3.5" />
+                Acceso restringido
+              </div>
+              <h2 className="mt-4 text-3xl font-bold text-slate-950">Entra al panel de inventario</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">Identifícate para gestionar productos, salidas, entradas y movimientos históricos.</p>
+            </div>
+            <form onSubmit={submitLogin} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Usuario</label>
+                <input value={loginUser} onChange={(event) => setLoginUser(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Introduce tu usuario" required />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Contraseña</label>
+                <input type="password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Introduce tu contraseña" required />
+              </div>
+              {loginError ? <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-600">{loginError}</div> : null}
+              <button type="submit" disabled={submitting} className="w-full rounded-2xl bg-slate-950 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-950/20 transition hover:bg-brand-blue disabled:opacity-60">Iniciar sesión</button>
+            </form>
+            <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Entorno</p>
+              <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-600">
+                <span>Panel de Sistemas 2026</span>
+                <span className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">Operativo</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(0,193,222,0.24),_transparent_32%),linear-gradient(180deg,_#0f172a_0%,_#020617_100%)] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-white/10 bg-white/92 shadow-2xl shadow-slate-950/30">
-        <header className="flex flex-col gap-5 border-b border-slate-200 px-6 py-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex items-center gap-4">
-            <Image src="/logo.svg" alt="Logo" width={96} height={72} priority className="h-auto w-20 rounded-3xl bg-slate-50 p-2" />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(0,193,222,0.20),_transparent_22%),radial-gradient(circle_at_top_right,_rgba(5,13,158,0.22),_transparent_30%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] space-y-6">
+        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/8 text-white shadow-2xl shadow-slate-950/40 backdrop-blur-xl">
+          <div className="grid gap-8 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8 lg:py-8">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue">Gestión de material IT</p>
-              <h1 className="mt-2 text-3xl font-bold text-slate-950">Stock visible, fotos y registro completo</h1>
-              <p className="mt-2 text-sm text-slate-500">DB {databaseMode === "remote" ? "remota" : "local"} - {products.length} productos visibles - {movements.length} movimientos registrados</p>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                <Sparkles className="h-3.5 w-3.5" />
+                Inventario premium
+              </div>
+              <div className="mt-6 flex items-start gap-4">
+                <div className="rounded-[1.75rem] bg-white/10 p-3">
+                  <Image src="/logo.svg" alt="Logo" width={110} height={78} priority className="h-auto w-20" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-cyan-100">Gestión de material IT</p>
+                  <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Visual, profesional y lista para el trabajo diario</h1>
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base">
+                    Controla entradas, salidas, fotos, series y trazabilidad completa desde una interfaz más clara, más rápida y más cómoda para operaciones reales.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-8 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.18em]">
+                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">DB {databaseMode === "remote" ? "remota" : "local"}</span>
+                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">{formatCompactNumber(products.length)} productos</span>
+                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-cyan-100">{formatCompactNumber(movements.length)} movimientos</span>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
+                <LayoutGrid className="h-5 w-5 text-cyan-200" />
+                <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Productos</p>
+                <p className="mt-2 text-3xl font-bold">{formatCompactNumber(dashboardStats.totalProducts)}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
+                <Boxes className="h-5 w-5 text-cyan-200" />
+                <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Unidades totales</p>
+                <p className="mt-2 text-3xl font-bold">{formatCompactNumber(dashboardStats.totalUnits)}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
+                <PackageCheck className="h-5 w-5 text-cyan-200" />
+                <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Disponibles</p>
+                <p className="mt-2 text-3xl font-bold">{formatCompactNumber(dashboardStats.availableUnits)}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
+                <PackageMinus className="h-5 w-5 text-cyan-200" />
+                <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-300">Asignadas</p>
+                <p className="mt-2 text-3xl font-bold">{formatCompactNumber(dashboardStats.assignedUnits)}</p>
+              </div>
             </div>
           </div>
-          <button type="button" onClick={logout} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Cerrar sesion</button>
-        </header>
+        </section>
+
+        <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/92 shadow-2xl shadow-slate-950/30">
+          <header className="flex flex-col gap-5 border-b border-slate-200 px-6 py-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue">Panel operativo</p>
+              <h2 className="mt-2 text-3xl font-bold text-slate-950">Inventario activo con trazabilidad</h2>
+              <p className="mt-2 text-sm text-slate-500">Selecciona un producto, gestiona unidades y revisa todo el histórico con una lectura mucho más cómoda.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Último producto activo: <span className="font-semibold text-slate-950">{selectedProduct?.name ?? "Sin selección"}</span>
+              </div>
+              <button type="button" onClick={logout} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-blue">Cerrar sesión</button>
+            </div>
+          </header>
         {message ? <div className="mx-6 mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 lg:mx-8">{message}</div> : null}
         {error ? <div className="mx-6 mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 lg:mx-8">{error}</div> : null}
 
-        <main className="grid gap-8 px-6 py-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8 lg:py-8">
-          <section>
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">Catalogo operativo</h2>
-                <p className="text-sm text-slate-500">Cada producto incluye su imagen, stock visible y accesos rápidos para sumar o restar unidades.</p>
+          <main className="grid gap-8 px-6 py-6 xl:grid-cols-[1.12fr_0.88fr] lg:px-8 lg:py-8">
+            <section className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Disponibles</p>
+                    <PackageCheck className="h-4 w-4 text-brand-blue" />
+                  </div>
+                  <p className="mt-3 text-3xl font-bold text-slate-950">{formatCompactNumber(dashboardStats.availableUnits)}</p>
+                  <p className="mt-2 text-sm text-slate-500">Unidades listas para asignar o entregar.</p>
+                </div>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Asignadas</p>
+                    <PackageMinus className="h-4 w-4 text-slate-950" />
+                  </div>
+                  <p className="mt-3 text-3xl font-bold text-slate-950">{formatCompactNumber(dashboardStats.assignedUnits)}</p>
+                  <p className="mt-2 text-sm text-slate-500">Material actualmente entregado o en uso.</p>
+                </div>
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Actividad</p>
+                    <Activity className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <p className="mt-3 text-3xl font-bold text-slate-950">{formatCompactNumber(movements.length)}</p>
+                  <p className="mt-2 text-sm text-slate-500">Movimientos visibles en el histórico global.</p>
+                </div>
               </div>
-              {loadingProducts ? <span className="text-sm text-brand-blue">Actualizando...</span> : null}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {products.map((product) => {
-                const isActive = product.slug === activeSlug;
-                return (
-                  <article
-                    key={product.id}
-                    onClick={() => activateProduct(product.slug)}
-                    className={`cursor-pointer rounded-[1.75rem] border p-5 text-left transition ${isActive ? "border-brand-blue bg-slate-950 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:border-brand-blue/30 hover:bg-white"}`}
-                  >
-                    <div className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/10">
-                      <div className={`absolute inset-x-0 top-0 h-16 ${isActive ? "bg-cyan-300/20" : "bg-brand-blue/10"}`} />
-                      <Image
-                        src={product.imagePath}
-                        alt={product.name}
-                        width={480}
-                        height={280}
-                        className="h-44 w-full object-cover"
-                      />
-                    </div>
-                    <div className="mt-4 flex items-start justify-between gap-3">
-                      <div>
-                        <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${isActive ? "text-cyan-300" : "text-brand-blue"}`}>{product.sku}</p>
-                        <h3 className="mt-2 text-xl font-semibold">{product.name}</h3>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${isActive ? "bg-white/10 text-cyan-200" : "bg-brand-blue/10 text-brand-blue"}`}>{product.highlight}</span>
-                    </div>
-                    <p className={`mt-2 text-sm ${isActive ? "text-slate-300" : "text-slate-500"}`}>{product.description}</p>
-                    <div className="mt-5 grid grid-cols-3 gap-3">
-                      <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-white"}`}>
-                        <p className={`text-xs uppercase tracking-[0.2em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Disponibles</p>
-                        <p className="mt-2 text-3xl font-bold">{product.availableUnits}</p>
-                      </div>
-                      <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-white"}`}>
-                        <p className={`text-xs uppercase tracking-[0.2em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Asignadas</p>
-                        <p className="mt-2 text-3xl font-bold">{product.assignedUnits}</p>
-                      </div>
-                      <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-white"}`}>
-                        <p className={`text-xs uppercase tracking-[0.2em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Total</p>
-                        <p className="mt-2 text-3xl font-bold">{product.totalUnits}</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          activateProduct(product.slug, "in");
-                        }}
-                        className={`rounded-2xl px-4 py-3 text-sm font-semibold ${isActive ? "bg-cyan-300 text-slate-950" : "bg-brand-blue text-white"}`}
-                      >
-                        Añadir unidades
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          activateProduct(product.slug, "out");
-                        }}
-                        className={`rounded-2xl px-4 py-3 text-sm font-semibold ${isActive ? "bg-white text-slate-950" : "bg-slate-950 text-white"}`}
-                      >
-                        Restar unidades
-                      </button>
-                    </div>
-                    <p className={`mt-4 text-xs ${isActive ? "text-slate-300" : "text-slate-400"}`}>Ultimo movimiento: {formatDate(product.lastMovementAt)}</p>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
 
-          <aside className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 shadow-inner shadow-white">
-            {selectedProduct ? (
-              <>
-                <div className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm">
-                  <Image
-                    src={selectedProduct.imagePath}
-                    alt={selectedProduct.name}
-                    width={900}
-                    height={420}
-                    className="h-56 w-full object-cover"
-                  />
-                </div>
-                <div className="mt-5 flex items-start justify-between gap-4">
+              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-5">
+                <div className="mb-5 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue">{selectedProduct.sku}</p>
-                    <h2 className="mt-2 text-2xl font-bold text-slate-950">{selectedProduct.name}</h2>
-                    <p className="mt-2 text-sm text-slate-500">{selectedProduct.description}</p>
+                    <h3 className="text-lg font-semibold text-slate-950">Catálogo operativo</h3>
+                    <p className="text-sm text-slate-500">Tarjetas visuales con foto, estado y accesos directos para trabajar más rápido.</p>
                   </div>
-                  <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-blue">{selectedProduct.highlight}</span>
+                  {loadingProducts ? <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-sm font-semibold text-brand-blue">Actualizando...</span> : null}
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-3">
-                  <div className="rounded-2xl bg-white px-4 py-4 shadow-sm"><p className="text-xs uppercase tracking-[0.2em] text-slate-400">Disponibles</p><p className="mt-2 text-3xl font-bold text-slate-950">{detail?.availableSerials.length ?? selectedProduct.availableUnits}</p></div>
-                  <div className="rounded-2xl bg-white px-4 py-4 shadow-sm"><p className="text-xs uppercase tracking-[0.2em] text-slate-400">Asignadas</p><p className="mt-2 text-3xl font-bold text-slate-950">{detail?.assignedSerials.length ?? selectedProduct.assignedUnits}</p></div>
-                  <div className="rounded-2xl bg-white px-4 py-4 shadow-sm"><p className="text-xs uppercase tracking-[0.2em] text-slate-400">Total</p><p className="mt-2 text-3xl font-bold text-slate-950">{detail?.totalUnits ?? selectedProduct.totalUnits}</p></div>
+                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                  {products.map((product) => {
+                    const isActive = product.slug === activeSlug;
+                    return (
+                      <article
+                        key={product.id}
+                        onClick={() => activateProduct(product.slug)}
+                        className={`group cursor-pointer overflow-hidden rounded-[1.75rem] border transition-all duration-200 ${isActive ? "border-brand-blue bg-slate-950 text-white shadow-xl shadow-brand-blue/10" : "border-slate-200 bg-white text-slate-900 shadow-sm hover:-translate-y-1 hover:border-brand-blue/25 hover:shadow-xl hover:shadow-slate-200/70"}`}
+                      >
+                        <div className="relative overflow-hidden">
+                          <div className={`absolute inset-0 bg-gradient-to-t ${isActive ? "from-slate-950 via-slate-950/25 to-transparent" : "from-slate-950/15 via-transparent to-transparent"}`} />
+                          <Image
+                            src={product.imagePath}
+                            alt={product.name}
+                            width={480}
+                            height={280}
+                            className="h-48 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                          />
+                          <div className="absolute left-4 top-4 flex items-center gap-2">
+                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${isActive ? "bg-cyan-300 text-slate-950" : "bg-white/90 text-brand-blue"}`}>{product.sku}</span>
+                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${isActive ? "bg-white/10 text-cyan-100" : "bg-slate-950/80 text-white"}`}>{product.highlight}</span>
+                          </div>
+                        </div>
+                        <div className="p-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h4 className="text-xl font-semibold">{product.name}</h4>
+                              <p className={`mt-2 text-sm leading-6 ${isActive ? "text-slate-300" : "text-slate-500"}`}>{product.description}</p>
+                            </div>
+                            <div className={`rounded-2xl px-3 py-2 text-right ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
+                              <p className={`text-[11px] uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Mov.</p>
+                              <p className="mt-1 text-sm font-semibold">{formatDate(product.lastMovementAt)}</p>
+                            </div>
+                          </div>
+                          <div className="mt-5 grid grid-cols-3 gap-3">
+                            <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
+                              <p className={`text-xs uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Disp.</p>
+                              <p className="mt-2 text-3xl font-bold">{product.availableUnits}</p>
+                            </div>
+                            <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
+                              <p className={`text-xs uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Asign.</p>
+                              <p className="mt-2 text-3xl font-bold">{product.assignedUnits}</p>
+                            </div>
+                            <div className={`rounded-2xl px-3 py-3 ${isActive ? "bg-white/10" : "bg-slate-50"}`}>
+                              <p className={`text-xs uppercase tracking-[0.18em] ${isActive ? "text-slate-300" : "text-slate-400"}`}>Total</p>
+                              <p className="mt-2 text-3xl font-bold">{product.totalUnits}</p>
+                            </div>
+                          </div>
+                          <div className="mt-5 grid grid-cols-2 gap-3">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                activateProduct(product.slug, "in");
+                              }}
+                              className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${isActive ? "bg-cyan-300 text-slate-950" : "bg-brand-blue text-white hover:bg-brand-blue/90"}`}
+                            >
+                              <PackagePlus className="h-4 w-4" />
+                              Añadir
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                activateProduct(product.slug, "out");
+                              }}
+                              className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${isActive ? "bg-white text-slate-950" : "bg-slate-950 text-white hover:bg-slate-800"}`}
+                            >
+                              <PackageMinus className="h-4 w-4" />
+                              Restar
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
+              </div>
+            </section>
 
-                <div className="mt-5 flex rounded-2xl border border-slate-200 bg-white p-1">
-                  <button type="button" onClick={() => setMode("in")} className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold ${mode === "in" ? "bg-brand-blue text-white" : "text-slate-600"}`}>Anadir unidades</button>
-                  <button type="button" onClick={() => setMode("out")} className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold ${mode === "out" ? "bg-slate-950 text-white" : "text-slate-600"}`}>Restar unidades</button>
-                </div>
-
-                {mode === "in" ? (
-                  <div className="mt-5 space-y-4 rounded-[1.5rem] bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between rounded-2xl bg-brand-blue/5 px-4 py-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-blue">Entrada de stock</p>
-                        <p className="mt-1 text-sm text-slate-500">Añade unidades disponibles con proveedor, fecha y números de serie.</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Series cargadas</p>
-                        <p className="mt-1 text-2xl font-bold text-brand-blue">{inSerialCount}</p>
+            <aside className="xl:sticky xl:top-6 xl:h-fit">
+              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 shadow-inner shadow-white">
+                {selectedProduct ? (
+                  <>
+                    <div className="relative overflow-hidden rounded-[1.5rem] bg-white shadow-sm">
+                      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/55 to-transparent" />
+                      <Image
+                        src={selectedProduct.imagePath}
+                        alt={selectedProduct.name}
+                        width={900}
+                        height={420}
+                        className="h-60 w-full object-cover"
+                      />
+                      <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+                        <div>
+                          <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-blue">{selectedProduct.sku}</span>
+                          <h3 className="mt-3 text-2xl font-bold text-white">{selectedProduct.name}</h3>
+                        </div>
+                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">{selectedProduct.highlight}</span>
                       </div>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <input type="number" min="1" value={inForm.quantity} onChange={(event) => setInForm((current) => ({ ...current, quantity: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Cantidad" />
-                      <input type="date" value={inForm.movementDate} onChange={(event) => setInForm((current) => ({ ...current, movementDate: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" />
+                    <p className="mt-5 text-sm leading-6 text-slate-500">{selectedProduct.description}</p>
+
+                    <div className="mt-5 grid grid-cols-3 gap-3">
+                      <div className="rounded-[1.35rem] bg-white px-4 py-4 shadow-sm">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Disponibles</p>
+                        <p className="mt-2 text-3xl font-bold text-slate-950">{detail?.availableSerials.length ?? selectedProduct.availableUnits}</p>
+                      </div>
+                      <div className="rounded-[1.35rem] bg-white px-4 py-4 shadow-sm">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Asignadas</p>
+                        <p className="mt-2 text-3xl font-bold text-slate-950">{detail?.assignedSerials.length ?? selectedProduct.assignedUnits}</p>
+                      </div>
+                      <div className="rounded-[1.35rem] bg-white px-4 py-4 shadow-sm">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Movimientos</p>
+                        <p className="mt-2 text-3xl font-bold text-slate-950">{selectedMovementCount}</p>
+                      </div>
                     </div>
-                    <input value={inForm.provider} onChange={(event) => setInForm((current) => ({ ...current, provider: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Proveedor" />
-                    <textarea value={inForm.serialsText} onChange={(event) => setInForm((current) => ({ ...current, serialsText: event.target.value }))} rows={5} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Un numero de serie por linea o separados por coma" />
-                    <button type="button" onClick={() => void submitMovement("in")} disabled={submitting} className="w-full rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-semibold text-white disabled:opacity-60">Guardar entrada</button>
-                  </div>
+
+                    <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-white p-1.5 shadow-sm">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button type="button" onClick={() => setMode("in")} className={`inline-flex items-center justify-center gap-2 rounded-[1.1rem] px-4 py-3 text-sm font-semibold transition ${mode === "in" ? "bg-brand-blue text-white shadow-md shadow-brand-blue/20" : "text-slate-600"}`}>
+                          <ArrowDownLeft className="h-4 w-4" />
+                          Añadir unidades
+                        </button>
+                        <button type="button" onClick={() => setMode("out")} className={`inline-flex items-center justify-center gap-2 rounded-[1.1rem] px-4 py-3 text-sm font-semibold transition ${mode === "out" ? "bg-slate-950 text-white shadow-md shadow-slate-950/20" : "text-slate-600"}`}>
+                          <ArrowUpRight className="h-4 w-4" />
+                          Restar unidades
+                        </button>
+                      </div>
+                    </div>
+
+                    {mode === "in" ? (
+                      <div className="mt-5 space-y-4 rounded-[1.5rem] bg-white p-5 shadow-sm">
+                        <div className="flex items-center justify-between rounded-[1.25rem] bg-brand-blue/5 px-4 py-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-blue">Entrada de stock</p>
+                            <p className="mt-1 text-sm text-slate-500">Alta cómoda de unidades nuevas con todos los datos necesarios.</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Series</p>
+                            <p className="mt-1 text-2xl font-bold text-brand-blue">{inSerialCount}</p>
+                          </div>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Cantidad</label>
+                            <input type="number" min="1" value={inForm.quantity} onChange={(event) => setInForm((current) => ({ ...current, quantity: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Cantidad" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Fecha</label>
+                            <input type="date" value={inForm.movementDate} onChange={(event) => setInForm((current) => ({ ...current, movementDate: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-slate-700">Proveedor</label>
+                          <input value={inForm.provider} onChange={(event) => setInForm((current) => ({ ...current, provider: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Proveedor o canal de compra" />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-semibold text-slate-700">Números de serie</label>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${quantityMatches ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                              {quantityMatches ? "Cantidad y series alineadas" : "Revisa cantidad y series"}
+                            </span>
+                          </div>
+                          <textarea value={inForm.serialsText} onChange={(event) => setInForm((current) => ({ ...current, serialsText: event.target.value }))} rows={5} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/10" placeholder="Una serie por línea o separadas por coma" />
+                        </div>
+                        <button type="button" onClick={() => void submitMovement("in")} disabled={submitting} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-blue/20 transition hover:bg-brand-blue/90 disabled:opacity-60">
+                          <PackagePlus className="h-4 w-4" />
+                          Guardar entrada
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-5 space-y-4 rounded-[1.5rem] bg-white p-5 shadow-sm">
+                        <div className="flex items-center justify-between rounded-[1.25rem] bg-slate-950/5 px-4 py-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-950">Salida de stock</p>
+                            <p className="mt-1 text-sm text-slate-500">Entrega rápida de unidades disponibles con control por serie.</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Series</p>
+                            <p className="mt-1 text-2xl font-bold text-slate-950">{outSerialCount}</p>
+                          </div>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Cantidad</label>
+                            <input type="number" min="1" value={outForm.quantity} onChange={(event) => setOutForm((current) => ({ ...current, quantity: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Cantidad" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Fecha</label>
+                            <input type="date" value={outForm.movementDate} onChange={(event) => setOutForm((current) => ({ ...current, movementDate: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-slate-700">Destinatario</label>
+                          <input value={outForm.recipient} onChange={(event) => setOutForm((current) => ({ ...current, recipient: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Persona, equipo o departamento" />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-semibold text-slate-700">Series para salida</label>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${quantityMatches ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                              {quantityMatches ? "Cantidad y series alineadas" : "Revisa cantidad y series"}
+                            </span>
+                          </div>
+                          <textarea value={outForm.serialsText} onChange={(event) => setOutForm((current) => ({ ...current, serialsText: event.target.value }))} rows={5} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Selecciona series o pégalas aquí" />
+                        </div>
+                        <button type="button" onClick={() => void submitMovement("out")} disabled={submitting} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-950/20 transition hover:bg-slate-800 disabled:opacity-60">
+                          <PackageMinus className="h-4 w-4" />
+                          Guardar salida
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                      <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Series disponibles</h4>
+                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{detail?.availableSerials.length ?? 0}</span>
+                        </div>
+                        {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
+                        {!loadingDetail && detail?.availableSerials.length ? (
+                          <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                            {detail.availableSerials.map((unit) => (
+                              <button
+                                key={unit.serialNumber}
+                                type="button"
+                                onClick={() => appendOutgoingSerial(unit.serialNumber)}
+                                className="w-full rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-100"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="font-semibold text-slate-900">{unit.serialNumber}</p>
+                                  <span className="rounded-full bg-slate-950 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">Preparar salida</span>
+                                </div>
+                                <p className="mt-2 text-xs text-slate-500">Proveedor: {unit.provider || "Sin dato"}</p>
+                                <p className="mt-1 text-xs text-slate-500">Entrada: {formatDate(unit.receivedDate)}</p>
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                        {!loadingDetail && !detail?.availableSerials.length ? <p className="text-sm text-slate-500">No hay unidades disponibles.</p> : null}
+                      </div>
+
+                      <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Series asignadas</h4>
+                          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">{detail?.assignedSerials.length ?? 0}</span>
+                        </div>
+                        {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
+                        {!loadingDetail && detail?.assignedSerials.length ? (
+                          <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                            {detail.assignedSerials.map((unit) => (
+                              <div key={unit.serialNumber} className="rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-3">
+                                <p className="font-semibold text-slate-900">{unit.serialNumber}</p>
+                                <p className="mt-2 text-xs text-slate-500">Destinatario: {unit.recipient || "Sin dato"}</p>
+                                <p className="mt-1 text-xs text-slate-500">Envío: {formatDate(unit.shippedDate)}</p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                        {!loadingDetail && !detail?.assignedSerials.length ? <p className="text-sm text-slate-500">No hay unidades asignadas.</p> : null}
+                      </div>
+                    </div>
+
+                    <div className="mt-6 rounded-[1.5rem] bg-white p-5 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Últimos movimientos del producto</h4>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">{selectedMovementCount} registros</span>
+                      </div>
+                      {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
+                      {!loadingDetail && detail?.recentMovements.length ? (
+                        <div className="space-y-3">
+                          {detail.recentMovements.map((movement) => (
+                            <div key={movement.id} className="rounded-[1.25rem] border border-slate-100 bg-slate-50 px-4 py-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-sm font-semibold text-slate-900">{movement.type === "in" ? "Entrada" : "Salida"} · {movement.serialNumber}</p>
+                                <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.unitStatus === "available" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                                  {movement.unitStatus === "available" ? "Disponible" : "Asignada"}
+                                </span>
+                              </div>
+                              <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                                <p><span className="font-semibold text-slate-700">Contacto:</span> {movement.partnerName}</p>
+                                <p><span className="font-semibold text-slate-700">Fecha:</span> {formatDate(movement.movementDate)}</p>
+                                <p><span className="font-semibold text-slate-700">Registro:</span> {formatDateTime(movement.createdAt)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                      {!loadingDetail && !detail?.recentMovements.length ? <p className="text-sm text-slate-500">Aún no hay movimientos para este producto.</p> : null}
+                    </div>
+                  </>
                 ) : (
-                  <div className="mt-5 space-y-4 rounded-[1.5rem] bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between rounded-2xl bg-slate-950/5 px-4 py-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-950">Salida de stock</p>
-                        <p className="mt-1 text-sm text-slate-500">Resta unidades disponibles indicando destinatario y las series a entregar.</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Series preparadas</p>
-                        <p className="mt-1 text-2xl font-bold text-slate-950">{outSerialCount}</p>
-                      </div>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <input type="number" min="1" value={outForm.quantity} onChange={(event) => setOutForm((current) => ({ ...current, quantity: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Cantidad" />
-                      <input type="date" value={outForm.movementDate} onChange={(event) => setOutForm((current) => ({ ...current, movementDate: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" />
-                    </div>
-                    <input value={outForm.recipient} onChange={(event) => setOutForm((current) => ({ ...current, recipient: event.target.value }))} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Destinatario" />
-                    <textarea value={outForm.serialsText} onChange={(event) => setOutForm((current) => ({ ...current, serialsText: event.target.value }))} rows={5} className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10" placeholder="Series disponibles para salida" />
-                    <button type="button" onClick={() => void submitMovement("out")} disabled={submitting} className="w-full rounded-2xl bg-slate-950 px-4 py-3.5 text-sm font-semibold text-white disabled:opacity-60">Guardar salida</button>
+                  <div className="flex min-h-80 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300 bg-white text-sm text-slate-500">
+                    Selecciona un producto para ver sus existencias y sus movimientos.
                   </div>
                 )}
-
-                <div className="mt-6 grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Series disponibles</h3>
-                    {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
-                    {!loadingDetail && detail?.availableSerials.length ? (
-                      <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
-                        {detail.availableSerials.map((unit) => (
-                          <button
-                            key={unit.serialNumber}
-                            type="button"
-                            onClick={() => appendOutgoingSerial(unit.serialNumber)}
-                            className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-100"
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="font-semibold text-slate-900">{unit.serialNumber}</p>
-                              <span className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">Preparar salida</span>
-                            </div>
-                            <p className="mt-1 text-xs text-slate-500">Proveedor: {unit.provider || "Sin dato"}</p>
-                            <p className="mt-1 text-xs text-slate-500">Entrada: {formatDate(unit.receivedDate)}</p>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                    {!loadingDetail && !detail?.availableSerials.length ? <p className="text-sm text-slate-500">No hay unidades disponibles.</p> : null}
-                  </div>
-
-                  <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Series asignadas</h3>
-                    {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
-                    {!loadingDetail && detail?.assignedSerials.length ? (
-                      <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
-                        {detail.assignedSerials.map((unit) => (
-                          <div key={unit.serialNumber} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="font-semibold text-slate-900">{unit.serialNumber}</p>
-                            <p className="mt-1 text-xs text-slate-500">Destinatario: {unit.recipient || "Sin dato"}</p>
-                            <p className="mt-1 text-xs text-slate-500">Envio: {formatDate(unit.shippedDate)}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                    {!loadingDetail && !detail?.assignedSerials.length ? <p className="text-sm text-slate-500">No hay unidades asignadas.</p> : null}
-                  </div>
-                </div>
-
-                <div className="mt-6 rounded-[1.5rem] bg-white p-5 shadow-sm">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Ultimos movimientos del producto</h3>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">{detail?.recentMovements.length ?? 0} registros</span>
-                  </div>
-                  {loadingDetail ? <p className="text-sm text-slate-500">Cargando detalle...</p> : null}
-                  {!loadingDetail && detail?.recentMovements.length ? (
-                    <div className="space-y-3">
-                      {detail.recentMovements.map((movement) => (
-                        <div key={movement.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold text-slate-900">{movement.type === "in" ? "Entrada" : "Salida"} - {movement.serialNumber}</p>
-                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.type === "in" ? "bg-brand-blue/10 text-brand-blue" : "bg-slate-900 text-white"}`}>{movement.unitStatus === "available" ? "Disponible" : "Asignada"}</span>
-                          </div>
-                          <p className="mt-1 text-xs text-slate-500">{movement.partnerName}</p>
-                          <p className="mt-1 text-xs text-slate-500">Fecha movimiento: {formatDate(movement.movementDate)}</p>
-                          <p className="mt-1 text-xs text-slate-500">Registro: {formatDateTime(movement.createdAt)}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                  {!loadingDetail && !detail?.recentMovements.length ? <p className="text-sm text-slate-500">Aun no hay movimientos para este producto.</p> : null}
-                </div>
-              </>
-            ) : (
-              <div className="flex min-h-80 items-center justify-center rounded-[1.5rem] border border-dashed border-slate-300 bg-white text-sm text-slate-500">
-                Selecciona un producto para ver sus existencias y sus movimientos.
               </div>
-            )}
-          </aside>
-        </main>
+            </aside>
+          </main>
 
-        <section className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white lg:px-8 lg:py-8">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+          <section className="border-t border-slate-200 bg-slate-950 px-6 py-6 text-white lg:px-8 lg:py-8">
+              <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Registro horizontal</p>
               <h2 className="mt-2 text-2xl font-bold">Historial completo de movimientos</h2>
-              <p className="mt-2 max-w-3xl text-sm text-slate-300">Cada operación queda reflejada abajo con producto, SKU, tipo, serie, proveedor o destinatario, fecha del movimiento, momento de registro y estado actual.</p>
+              <p className="mt-2 max-w-3xl text-sm text-slate-300">Cada operación queda reflejada con una lectura más clara, jerarquía visual reforzada y una tabla horizontal más cómoda para trabajo intensivo.</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-              {loadingMovements ? "Actualizando historial..." : `${movements.length} movimientos visibles`}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                {loadingMovements ? "Actualizando historial..." : `${movements.length} movimientos visibles`}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                Desplaza horizontalmente para ver todos los campos
+              </div>
             </div>
-          </div>
 
-          <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900/80">
+            <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900/80 shadow-2xl shadow-slate-950/25">
             {loadingMovements ? <div className="px-5 py-6 text-sm text-slate-300">Cargando historial de movimientos...</div> : null}
             {!loadingMovements && movements.length ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-[1180px] text-left text-sm">
-                  <thead className="bg-white/5 text-xs uppercase tracking-[0.18em] text-slate-300">
+                <div className="overflow-x-auto">
+                  <table className="min-w-[1260px] text-left text-sm">
+                    <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-[0.18em] text-slate-300">
                     <tr>
                       <th className="px-4 py-4 font-semibold">Fecha mov.</th>
                       <th className="px-4 py-4 font-semibold">Registro</th>
@@ -650,41 +898,42 @@ export default function Home() {
                   </thead>
                   <tbody>
                     {movements.map((movement) => (
-                      <tr key={movement.id} className="border-t border-white/8 text-slate-100">
-                        <td className="px-4 py-4 whitespace-nowrap">{formatDate(movement.movementDate)}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-slate-300">{formatDateTime(movement.createdAt)}</td>
+                        <tr key={movement.id} className="border-t border-white/8 text-slate-100 odd:bg-white/[0.02] even:bg-transparent hover:bg-white/[0.05]">
+                          <td className="px-4 py-4 whitespace-nowrap font-semibold">{formatDate(movement.movementDate)}</td>
+                          <td className="px-4 py-4 whitespace-nowrap text-slate-300">{formatDateTime(movement.createdAt)}</td>
                         <td className="px-4 py-4">
                           <button
                             type="button"
                             onClick={() => activateProduct(movement.productSlug, movement.type)}
-                            className="rounded-xl bg-white/5 px-3 py-2 text-left transition hover:bg-white/10"
+                              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left transition hover:bg-white/10"
                           >
-                            <span className="block font-semibold text-white">{movement.productName}</span>
-                            <span className="mt-1 block text-xs text-slate-300">Abrir producto</span>
+                              <span className="block font-semibold text-white">{movement.productName}</span>
+                              <span className="mt-1 block text-xs text-slate-300">Abrir producto</span>
                           </button>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-300">{movement.productSku}</td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.type === "in" ? "bg-cyan-300 text-slate-950" : "bg-white text-slate-950"}`}>
+                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.type === "in" ? "bg-cyan-300 text-slate-950" : "bg-white text-slate-950"}`}>
                             {movement.type === "in" ? "Entrada" : "Salida"}
                           </span>
                         </td>
-                        <td className="px-4 py-4 font-semibold whitespace-nowrap">{movement.serialNumber}</td>
-                        <td className="px-4 py-4">{movement.partnerName}</td>
+                          <td className="px-4 py-4 whitespace-nowrap font-semibold text-white">{movement.serialNumber}</td>
+                          <td className="px-4 py-4 text-slate-200">{movement.partnerName}</td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.unitStatus === "available" ? "bg-emerald-400/20 text-emerald-200" : "bg-amber-400/20 text-amber-200"}`}>
+                            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${movement.unitStatus === "available" ? "bg-emerald-400/20 text-emerald-200" : "bg-amber-400/20 text-amber-200"}`}>
                             {movement.unitStatus === "available" ? "Disponible" : "Asignada"}
                           </span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                  </table>
+                </div>
             ) : null}
             {!loadingMovements && !movements.length ? <div className="px-5 py-6 text-sm text-slate-300">Todavía no hay movimientos registrados.</div> : null}
           </div>
-        </section>
+          </section>
+        </div>
       </div>
     </div>
   );
