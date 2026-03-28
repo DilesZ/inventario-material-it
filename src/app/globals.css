@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-brand-blue: #050d9e;
+  --color-brand-cyan: #00c1de;
+  --color-brand-dark: #333333;
+  --color-brand-gray: #f5f7fa;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: #020617;
+  color: #0f172a;
+  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
+}
