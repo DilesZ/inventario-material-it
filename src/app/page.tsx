@@ -626,10 +626,11 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setShowToolbox((current) => !current)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-3 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                    aria-label="Abrir caja de herramientas"
+                    title="Caja de herramientas"
+                    className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-3 text-white transition hover:bg-white/15"
                   >
                     <Wrench className="h-4 w-4" />
-                    Caja de herramientas
                   </button>
                 </div>
                 <button type="button" onClick={logout} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100">
