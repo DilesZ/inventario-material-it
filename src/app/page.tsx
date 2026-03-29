@@ -14,6 +14,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Wrench,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -137,6 +138,7 @@ export default function Home() {
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [showToolbox, setShowToolbox] = useState(false);
   const [newProductForm, setNewProductForm] = useState({ name: "", sku: "", description: "", highlight: "", imagePath: "" });
   const [runningAdminAction, setRunningAdminAction] = useState<"units" | "movements" | null>(null);
   const [mode, setMode] = useState<"in" | "out" | null>(null);
@@ -500,6 +502,16 @@ export default function Home() {
     }
   };
 
+  const handleToolboxRefresh = async () => {
+    setShowToolbox(false);
+    await refreshInventoryView();
+  };
+
+  const handleToolboxAdminAction = async (target: "units" | "movements") => {
+    setShowToolbox(false);
+    await handleAdminAction(target);
+  };
+
   if (isAuthenticated === null) {
     return <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">Cargando inventario...</div>;
   }
@@ -610,33 +622,51 @@ export default function Home() {
                   <PackagePlus className="h-4 w-4" />
                   Nuevo producto
                 </button>
-                <button
-                  type="button"
-                  onClick={() => void refreshInventoryView()}
-                  disabled={loadingProducts || loadingMovements || loadingDetail || runningAdminAction !== null}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-50"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Refrescar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleAdminAction("units")}
-                  disabled={runningAdminAction !== null || submitting}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20 disabled:opacity-50"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {runningAdminAction === "units" ? "Borrando unidades..." : "Borrar unidades"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleAdminAction("movements")}
-                  disabled={runningAdminAction !== null || submitting}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20 disabled:opacity-50"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {runningAdminAction === "movements" ? "Borrando movimientos..." : "Borrar movimientos"}
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowToolbox((current) => !current)}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-3 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    <Wrench className="h-4 w-4" />
+                    Caja
+                  </button>
+
+                  {showToolbox ? (
+                    <div className="absolute right-0 top-full z-20 mt-3 w-64 rounded-[1.5rem] border border-white/10 bg-slate-950/95 p-3 shadow-2xl shadow-slate-950/60 backdrop-blur">
+                      <div className="mb-2 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">Caja de herramientas</div>
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleToolboxRefresh()}
+                          disabled={loadingProducts || loadingMovements || loadingDetail || runningAdminAction !== null}
+                          className="flex w-full items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-50"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Refrescar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleToolboxAdminAction("units")}
+                          disabled={runningAdminAction !== null || submitting}
+                          className="flex w-full items-center gap-2 rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-left text-sm font-semibold text-amber-100 transition hover:bg-amber-400/20 disabled:opacity-50"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          {runningAdminAction === "units" ? "Borrando unidades..." : "Borrar unidades"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleToolboxAdminAction("movements")}
+                          disabled={runningAdminAction !== null || submitting}
+                          className="flex w-full items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-left text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20 disabled:opacity-50"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          {runningAdminAction === "movements" ? "Borrando movimientos..." : "Borrar movimientos"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
                 <button type="button" onClick={logout} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100">
                   Cerrar sesión
                 </button>
